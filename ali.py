@@ -1,219 +1,302 @@
-import streamlit as st
-import pandas as pd
-import google.generativeai as genai
-import streamlit.components.v1 as components
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>صفحة هبوط احترافية - منتج خليجي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* إعدادات عامة وموبايل فيرست */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .mobile-container {
+            max-width: 480px; /* العرض المثالي لشاشات الجوال */
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            padding-bottom: 80px; /* مساحة للزر العائم */
+        }
 
-# --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="ALI Growth Engine V13", layout="wide", page_icon="https://i.postimg.cc/xCt20gWj/image.png")
+        /* 1. الشريط العلوي (الثقة) */
+        .top-trust-bar {
+            background-color: #1a1a1a;
+            color: #d4af37; /* لون ذهبي */
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 5px;
+            font-size: 12px;
+            font-weight: bold;
+        }
 
-# --- 2. التصميم (CSS) ---
-st.markdown("""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
-html, body, [data-testid="stAppViewContainer"], .main {
-    font-family: 'Cairo', sans-serif !important;
-    direction: rtl !important;
-    text-align: right !important;
-}
-.main-header { background: #182848; color: white; padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; }
-.image-prompt-box { background: #f0f2f6; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #ffbd45; }
-.stDataFrame div[data-testid="stTable"] { direction: ltr !important; }
-.stDataFrame td, .stDataFrame th { text-align: center !important; }
-</style>
-""", unsafe_allow_html=True)
+        /* 2. قسم الهيرو (البداية الصادمة) */
+        .hero-section {
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        .hero-title {
+            color: #1a1a1a;
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+        .hero-title span {
+            color: #27ae60; /* لون أخضر أو حسب منتجك */
+        }
+        .badges-container {
+            position: absolute;
+            right: 10px;
+            top: 20%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .badge {
+            background: #d4af37;
+            color: #fff;
+            padding: 10px;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        .hero-image {
+            width: 100%;
+            border-radius: 15px;
+            margin-top: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
 
-# --- 3. تهيئة الذاكرة ---
-if 'html_code' not in st.session_state: st.session_state.html_code = ""
-if 'image_prompts' not in st.session_state: st.session_state.image_prompts = []
-if 'video_scripts' not in st.session_state: st.session_state.video_scripts = ""
-if 'marketing_strategy' not in st.session_state: st.session_state.marketing_strategy = ""
-if 'active_model' not in st.session_state: st.session_state.active_model = None
+        /* 3. قسم قبل وبعد (التحول) */
+        .transformation-section {
+            padding: 20px;
+            background-color: #fff;
+            text-align: center;
+        }
+        .section-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .before-after-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            position: relative;
+        }
+        .ba-box {
+            width: 48%;
+            position: relative;
+        }
+        .ba-box img {
+            width: 100%;
+            border-radius: 10px;
+        }
+        .ba-label {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .arrow-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            z-index: 10;
+        }
 
-# --- 4. دوال الذكاء الاصطناعي (محدثة بقواعد Copywriting Mastery & Agora) ---
-def get_working_model(api_key):
-    if st.session_state.active_model: return st.session_state.active_model
-    try:
-        genai.configure(api_key=api_key)
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods and 'flash' in m.name.lower():
-                st.session_state.active_model = m.name
-                return m.name
-        st.session_state.active_model = "gemini-pro"
-        return "gemini-pro"
-    except: return "gemini-pro"
+        /* 4. قسم الخبراء والدليل الاجتماعي */
+        .authority-section {
+            background: #f8f9fa;
+            padding: 20px;
+        }
+        .doctor-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 15px;
+        }
+        .doctor-card img {
+            width: 80px;
+            border-radius: 50%;
+            border: 3px solid #d4af37;
+        }
+        .guarantee-box {
+            background: #1a1a1a;
+            color: #d4af37;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px dashed #d4af37;
+        }
 
-def generate_html_page(api_key, product_name):
-    try:
-        model_name = get_working_model(api_key)
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(model_name)
+        /* 5. قسم المكونات / الآلية (الدوائر) */
+        .ingredients-section {
+            padding: 20px;
+            background: #27ae60; /* يمكنك تغييره حسب هوية المنتج */
+            color: white;
+        }
+        .ingredients-grid {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .ingredient-item {
+            width: 30%;
+            text-align: center;
+        }
+        .ingredient-item img {
+            width: 100%;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+        .ingredient-item p {
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        /* 6. الزر العائم (Call to Action) */
+        .sticky-cta {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 20px;
+            box-sizing: border-box;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            z-index: 999;
+        }
+        .order-btn {
+            display: block;
+            width: 100%;
+            background: linear-gradient(90deg, #d4af37 0%, #ffdf00 100%);
+            color: #1a1a1a;
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 22px;
+            font-weight: 900;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="mobile-container">
+
+    <div class="top-trust-bar">
+        <span>🚚 شحن سريع ومجاني</span>
+        <span>🛡️ دفع آمن 100%</span>
+        <span>⭐ ضمان استعادة الأموال</span>
+    </div>
+
+    <div class="hero-section">
+        <h1 class="hero-title">عناية فائقة وتألق <span>طبيعي 100%</span></h1>
         
-        # برومت مدمج بقواعد PAS و FAB والمحفزات النفسية
-        prompt = f"""أنت أعظم كاتب إعلانات (Copywriter) مبرمج ومصمم واجهات في العالم.
-        المطلوب: برمجة صفحة هبوط كاملة (HTML & CSS مدمج) لمنتج: {product_name}.
-        
-        ⚠️ القواعد التسويقية الصارمة للتصميم والنص:
-        1. الهيكل الأعلى (Hero): استخدم إطار PAS (Problem, Agitate, Solution). ابدأ بنقطة الألم، ضخمها، ثم قدم المنتج كحل نهائي.
-        2. الفوائد (Benefits): استخدم إطار FAB (Feature, Advantage, Benefit). لا تذكر ميزة إلا وتربطها بنتيجة عاطفية للعميل (كيف سيشعر).
-        3. المحفزات النفسية: يجب أن يتضمن التصميم أقساماً واضحة لـ (الدليل الاجتماعي - 3 تقييمات قوية) و (عكس المخاطر - ضمان استرجاع أو تجربة بدون مخاطر).
-        4. الوضوح التام: لا تستخدم مصطلحات تقنية معقدة. فكرة واحدة لكل جملة. جمل قصيرة جداً ومقنعة.
-        5. النداء للعمل (CTA): اجعله واضحاً، يخلق إلحاحاً (Urgency)، مثل "اطلب الآن ووفر، الكمية محدودة!".
-        
-        ⚠️ القواعد البرمجية:
-        لغة الصفحة العربية (RTL) بخط 'Cairo'. تصميم حديث وسريع التجاوب (Responsive). زر عائم للطلب في الأسفل.
-        أعطني فقط كود الـ HTML والـ CSS الكامل داخل علامتي ```html و ```."""
-        
-        response = model.generate_content(prompt)
-        code = response.text
-        if "```html" in code: code = code.split("```html")[1].split("```")[0]
-        elif "```" in code: code = code.split("```")[1]
-        return code.strip()
-    except Exception as e: return f"<h3>خطأ في التوليد: {str(e)}</h3>"
+        <div class="badges-container">
+            <div class="badge">نتائج<br>مضمونة</div>
+            <div class="badge">100%<br>طبيعي</div>
+        </div>
 
-def generate_video_scripts(api_key, product_name):
-    try:
-        model_name = get_working_model(api_key)
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(model_name)
-        
-        # برومت مدمج بقواعد AIDA
-        prompt = f"""أنت خبير محتوى تسويقي و Copywriter محترف. 
-        اكتب 5 سكريبتات مفصلة لفيديوهات (UGC) قصيرة لمنتج: {product_name}.
-        خصصها للمنصات: 1. تيك توك، 2. انستجرام ريلز، 3. يوتيوب شورتس، 4. سناب شات، 5. فيسبوك.
-        
-        ⚠️ قواعد الكتابة لكل سكريبت:
-        1. الإطار العام: استخدم نموذج AIDA (انتباه، اهتمام، رغبة، إجراء).
-        2. الثواني الأولى (Hook): يجب أن تخطف الانتباه فوراً بالتركيز على مشكلة العميل (Pain Point) وليس المنتج.
-        3. العاطفة قبل المنطق: اجعل التعليق الصوتي يركز على (النتيجة العاطفية) التي سيحصل عليها العميل.
-        4. المحفزات: ادمج محفز (الندرة) أو (الإلحاح) في الثواني الأخيرة لدفعهم نحو زر الشراء.
-        
-        أعطني السكريبتات منسقة بشكل احترافي."""
-        return model.generate_content(prompt).text
-    except Exception as e: return f"خطأ: {str(e)}"
+        <img src="https://images.unsplash.com/photo-1556228578-0d85b1a4d571?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="صورة المنتج" class="hero-image">
+    </div>
 
-def generate_strategy(api_key, product_name):
-    try:
-        model_name = get_working_model(api_key)
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(model_name)
-        
-        # برومت مدمج بقواعد Agora (الحجة والآلية الفريدة)
-        prompt = f"""أنت خبير أبحاث تسويقية من مدرسة Agora العملاقة لكتابة الإعلانات.
-        المطلوب: دراسة سوق واستراتيجية اختراق لمنتج: {product_name}.
-        
-        ⚠️ يجب أن تغطي دراستك بدقة ما يلي:
-        1. الآلية الفريدة (Unique Mechanism): لا تروج للمنتج كسلعة عادية. ما هو الشيء الفريد، المختلف، والأفضل في هذا المنتج الذي يجعله الحل الوحيد الفعال مقارنة بالمنافسين؟
-        2. الحجة التي لا تقهر (The Magnificent Argument): ما هي الحجة المنطقية والعاطفية المتسلسلة التي يجب أن نبنيها في عقل العميل ليقتنع بالشراء؟ (ركز على الحجة وليس مجرد الكلمات الرنانة).
-        3. المعتقدات الأساسية (Necessary Beliefs): اكتب 4 معتقدات حتمية يجب أن نزرعها في عقل العميل المستهدف قبل أن نعرض عليه المنتج، بصيغة "يجب أن يعتقد أن...".
-        4. فجوات السوق (Market Gaps): ما هي نقاط الضعف في إعلانات المنافسين التي يمكننا استغلالها؟"""
-        return model.generate_content(prompt).text
-    except Exception as e: return f"خطأ: {str(e)}"
+    <div class="transformation-section">
+        <h2 class="section-title">شاهد التحول المذهل!</h2>
+        <div class="before-after-container">
+            <div class="ba-box">
+                <img src="https://images.unsplash.com/photo-1596215143922-eedece08b6fd?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" alt="قبل">
+                <span class="ba-label">قبل</span>
+            </div>
+            
+            <img src="https://cdn-icons-png.flaticon.com/512/109/109617.png" class="arrow-overlay" alt="سهم">
 
-def generate_image_prompts(api_key, product_name):
-    try:
-        model_name = get_working_model(api_key)
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(model_name)
-        prompt = f"""اكتب 3 برومتات (Prompts) احترافية باللغة الإنجليزية لتوليد صور لمنتج: "{product_name}".
-        1. Hero Shot
-        2. Lifestyle Shot
-        3. Macro Shot
-        افصل بينها بـ: "---PROMPT_SEPARATOR---" """
-        response = model.generate_content(prompt)
-        prompts = response.text.split("---PROMPT_SEPARATOR---")
-        return [p.strip() for p in prompts if p.strip()]
-    except: return []
+            <div class="ba-box">
+                <img src="https://images.unsplash.com/photo-1600948836101-f9ff5bb56f11?ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=80" alt="بعد">
+                <span class="ba-label" style="background: #27ae60;">بعد</span>
+            </div>
+        </div>
+    </div>
 
-# --- 5. القائمة الجانبية ---
-with st.sidebar:
-    st.title("🏗️ محرك علي V13.0")
-    api_key = st.text_input("🔑 API Key", type="password")
-    product_name = st.text_input("📦 اسم المنتج")
-    st.markdown("---")
-    st.markdown("### 💰 إعدادات المالية (نقطة التعادل)")
-    P = st.number_input("سعر البيع (P)", value=250.0)
-    C = st.number_input("التكلفة (C)", value=50.0)
-    CPL = st.number_input("تكلفة الليد (CPL)", value=15.0)
-    uploaded_file = st.file_uploader("📊 ارفع ملف الإكسل (المالية)", type=['xlsx', 'csv'])
+    <div class="authority-section">
+        <div class="doctor-card">
+            <img src="https://images.unsplash.com/photo-1594824436951-7f12620ce6f8?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" alt="طبيبة">
+            <div>
+                <h3 style="margin: 0; color: #2c3e50;">نصيحة الخبراء</h3>
+                <p style="margin: 5px 0 0 0; font-size: 14px;">"أوصي بهذا المنتج كحل نهائي وفعال، لأنه يعالج المشكلة من الجذور."</p>
+            </div>
+        </div>
 
-# --- 6. الواجهة الرئيسية ---
-st.markdown('<div class="main-header"><h1>ALI Growth Engine - Master Copywriter</h1></div>', unsafe_allow_html=True)
+        <div class="guarantee-box">
+            <h2 style="margin: 0;">ضمان استعادة الأموال لمدة 30 يوماً</h2>
+            <p>اطلب الآن بثقة تامة. المعاملة آمنة 100%.</p>
+        </div>
+    </div>
 
-if not api_key:
-    st.warning("الرجاء إدخال API Key في القائمة الجانبية للبدء.")
-else:
-    tabs = st.tabs(["🎯 الاستراتيجية (Agora)", "📄 صفحة الهبوط (PAS/FAB)", "🎬 سكريبتات الفيديو (AIDA)", "🖼️ استوديو الصور", "💰 التحليل المالي"])
-    
-    # --- التبويب 1: الاستراتيجية ---
-    with tabs[0]:
-        st.subheader("دراسة السوق وبناء الحجة (طريقة Agora)")
-        if st.button("🧠 استخراج الاستراتيجية والآلية الفريدة"):
-            if product_name:
-                with st.spinner("جاري تحليل السوق وبناء الحجة..."):
-                    st.session_state.marketing_strategy = generate_strategy(api_key, product_name)
-            else: st.error("أدخل اسم المنتج أولاً!")
-        if st.session_state.marketing_strategy:
-            st.markdown(st.session_state.marketing_strategy)
+    <div class="ingredients-section">
+        <h2 style="text-align: center; margin-top: 0;">السر وراء الفعالية (الآلية الفريدة)</h2>
+        <div class="ingredients-grid">
+            <div class="ingredient-item">
+                <img src="https://images.unsplash.com/photo-1611078489935-0cb964de46d6?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" alt="مكون 1">
+                <p>مستخلصات طبيعية</p>
+            </div>
+            <div class="ingredient-item">
+                <img src="https://images.unsplash.com/photo-1556228578-0d85b1a4d571?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" alt="مكون 2">
+                <p>تغذية عميقة</p>
+            </div>
+            <div class="ingredient-item">
+                <img src="https://images.unsplash.com/photo-1598440947619-2ce65f80046e?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80" alt="مكون 3">
+                <p>نتائج سريعة</p>
+            </div>
+        </div>
+    </div>
 
-    # --- التبويب 2: صفحة الهبوط ---
-    with tabs[1]:
-        st.subheader("بناء صفحة الهبوط (هياكل PAS و FAB)")
-        if st.button("🚀 توليد صفحة الهبوط الاحترافية"):
-            if product_name:
-                with st.spinner("جاري برمجة وتصميم الصفحة..."):
-                    st.session_state.html_code = generate_html_page(api_key, product_name)
-            else: st.error("أدخل اسم المنتج أولاً!")
-        if st.session_state.html_code:
-            st.success("✅ الصفحة جاهزة ومبنية على أصول علم النفس الشرائي!")
-            components.html(st.session_state.html_code, height=500, scrolling=True)
-            with st.expander("💻 عرض كود الـ HTML للنسخ"):
-                st.code(st.session_state.html_code, language='html')
+    <div class="sticky-cta">
+        <a href="#checkout" class="order-btn">اطلب باقتك الآن! 🛒</a>
+    </div>
 
-    # --- التبويب 3: سكريبتات الفيديو ---
-    with tabs[2]:
-        st.subheader("توليد 5 سكريبتات فيديو (نموذج AIDA)")
-        if st.button("🎬 توليد السكريبتات البيعية"):
-            if product_name:
-                with st.spinner("جاري كتابة السكريبتات..."):
-                    st.session_state.video_scripts = generate_video_scripts(api_key, product_name)
-            else: st.error("أدخل اسم المنتج أولاً!")
-        if st.session_state.video_scripts:
-            st.markdown(st.session_state.video_scripts)
+</div>
 
-    # --- التبويب 4: استوديو الصور ---
-    with tabs[3]:
-        st.subheader("أوامر توليد الصور")
-        if st.button("🖼️ توليد البرومتات"):
-            if product_name:
-                with st.spinner("المخرج الفني يعمل..."):
-                    st.session_state.image_prompts = generate_image_prompts(api_key, product_name)
-            else: st.error("أدخل اسم المنتج أولاً!")
-        if st.session_state.image_prompts and len(st.session_state.image_prompts) >= 3:
-            for i, p in enumerate(st.session_state.image_prompts):
-                st.markdown(f'<div class="image-prompt-box"><strong>البرومت {i+1}:</strong><br>{p}</div>', unsafe_allow_html=True)
-                st.code(p, language="text")
-
-    # --- التبويب 5: التحليل المالي ---
-    with tabs[4]:
-        if uploaded_file:
-            try:
-                df = pd.read_excel(uploaded_file) if uploaded_file.name.endswith('.xlsx') else pd.read_csv(uploaded_file)
-                break_even_dr = (C + CPL) / P
-                st.info(f"💡 نقطة التعادل المحسوبة: **{round(break_even_dr * 100, 2)}%** من نسبة التسليم (DR).")
-                col_a, col_b = st.columns(2)
-                with col_a: country_col = st.selectbox("عمود الدولة/المنطقة:", df.columns)
-                with col_b: dr_col = st.selectbox("عمود نسبة التسليم (DR):", df.columns)
-                
-                results = []
-                for _, row in df.iterrows():
-                    try:
-                        raw_dr = str(row[dr_col]).replace('%', '').strip()
-                        val_dr = float(raw_dr)
-                        if val_dr > 1: val_dr /= 100 
-                        status = "✅ رابح" if val_dr >= break_even_dr else "🚨 خاسر"
-                        results.append({"المنطقة": row[country_col], "التسليم (DR)": f"{round(val_dr*100, 1)}%", "التعادل المطلوب": f"{round(break_even_dr*100, 1)}%", "الحالة": status})
-                    except: continue
-                if results: st.table(pd.DataFrame(results))
-            except Exception as e: st.error(f"خطأ: {str(e)}")
-        else:
-            st.info("ارفع ملف البيانات المالي لعرض التحليل.")
+</body>
+</html>
