@@ -197,4 +197,23 @@ else:
                 st.code(p, language="text")
 
     with tabs[4]:
-        if
+        if uploaded_file:
+            try:
+                df = pd.read_excel(uploaded_file) if uploaded_file.name.endswith('.xlsx') else pd.read_csv(uploaded_file)
+                break_even_dr = (C + CPL) / P
+                st.info(f"💡 نقطة التعادل المحسوبة: **{round(break_even_dr * 100, 2)}%** من نسبة التسليم (DR).")
+                col_a, col_b = st.columns(2)
+                with col_a: country_col = st.selectbox("عمود الدولة:", df.columns)
+                with col_b: dr_col = st.selectbox("عمود نسبة التسليم:", df.columns)
+                results = []
+                for _, row in df.iterrows():
+                    try:
+                        raw_dr = str(row[dr_col]).replace('%', '').strip()
+                        val_dr = float(raw_dr)
+                        if val_dr > 1: val_dr /= 100 
+                        status = "✅ رابح" if val_dr >= break_even_dr else "🚨 خاسر"
+                        results.append({"المنطقة": row[country_col], "التسليم (DR)": f"{round(val_dr*100, 1)}%", "التعادل المطلوب": f"{round(break_even_dr*100, 1)}%", "الحالة": status})
+                    except: continue
+                if results: st.table(pd.DataFrame(results))
+            except Exception as e: st.error(f"خطأ: {str(e)}")
+        else: st.info("ارفع ملف البيانات المالي لعرض التحليل.")
