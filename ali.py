@@ -4,7 +4,7 @@ import google.generativeai as genai
 import streamlit.components.v1 as components
 
 # --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="ALI Growth Engine V19", layout="wide", page_icon="https://i.postimg.cc/xCt20gWj/image.png")
+st.set_page_config(page_title="ALI Growth Engine V20", layout="wide", page_icon="https://i.postimg.cc/xCt20gWj/image.png")
 
 # --- 2. التصميم (CSS) ---
 st.markdown("""
@@ -50,8 +50,7 @@ def generate_strategy(api_key, product_name):
         model = genai.GenerativeModel(model_name)
         prompt = f"""أنت خبير أبحاث تسويقية من مدرسة Agora العملاقة.
         المطلوب: دراسة سوق لمنتج: {product_name}.
-        ⚠️ ركز على: 1. الآلية الفريدة، 2. الحجة التي لا تقهر، 3. المعتقدات الأساسية، 4. فجوات السوق.
-        اكتب باللغة العربية الفصحى بشكل منظم وواضح."""
+        ⚠️ ركز على: 1. الآلية الفريدة، 2. الحجة التي لا تقهر، 3. المعتقدات الأساسية، 4. فجوات السوق."""
         return model.generate_content(prompt).text
     except Exception as e: return f"خطأ: {str(e)}"
 
@@ -62,33 +61,34 @@ def generate_html_page(api_key, product_name, strategy_text, product_color):
         model = genai.GenerativeModel(model_name)
         
         prompt = f"""أنت أعظم مبرمج ومصمم لصفحات الهبوط البصرية (Visual-First).
-        المطلوب: برمجة كود HTML و CSS متكامل لصفحة هبوط لمنتج: {product_name}.
-        ألوان الهوية المطلوبة للمنتج: {product_color}.
+        المطلوب: برمجة كود HTML و CSS متكامل لصفحة هبوط لمنتج: {product_name}. الألوان المطلوبة: {product_color}.
+        الاستراتيجية المبني عليها: {strategy_text}
         
-        🧠 **[هام جداً]: ابنِ النصوص بناءً على هذه الاستراتيجية:** {strategy_text}
+        🚨🚨 **[قاعدة حياة أو موت - التوافق مع YouCan]:** 🚨🚨
+        إذا لم تتبع هذه القواعد، سينهار التصميم في منصة YouCan:
+        1. **ممنوع منعاً باتاً** استخدام وسوم `<html>` أو `<head>` أو `<body>`.
+        2. ابدأ الكود بـ `<style>` ثم ضع كل محتوى الصفحة داخل حاوية معزولة هكذا: `<div id="ali-lp-container" dir="rtl">...</div>`.
+        3. **العزل التام (CSS Scoping):** في الـ CSS، يجب أن يبدأ **كل محدد** بـ `#ali-lp-container`. (مثال: `#ali-lp-container h1` وليس `h1`).
+        4. استخدم `!important` بكثافة في خصائص الـ CSS (الألوان، الخطوط، الهوامش) لكي تتغلب على ستايلات منصة YouCan.
+        5. استورد خط 'Cairo' في الـ CSS وطبقه على الحاوية بـ `!important`.
+        6. اجعل عرض الحاوية الأقصى `max-width: 480px !important;` مع `margin: 0 auto !important;` لتبدو كشاشة جوال.
+
+        ⚠️ الأقسام الـ 12 الإلزامية (داخل حاوية #ali-lp-container):
+        - شريط ثقة علوي (توصيل مجاني، دفع عند الاستلام).
+        1. قسم الهيرو (فيديو خلفية، عنوان صغير، زر طلب).
+        2. قسم المشكلة (GIF).
+        3. قسم الحل (GIF).
+        4. الآلية الفريدة (صورة + نقاط).
+        5. شبكة الفوائد (4 صور مربعة).
+        6. المقارنة.
+        7. المكونات/الخصائص.
+        8. التقييمات (3 فيديوهات طولية).
+        9. رأي خبير.
+        10. طريقة الاستخدام (3 خطوات مصورة).
+        11. ضمان الاسترجاع (صورة ختم كبيرة).
+        12. زر عائم (Sticky Bottom CTA).
         
-        ⚠️ قوانين التصميم الإلزامية (تحديث CRO):
-        - ابدأ الكود بـ <html lang="ar" dir="rtl"> إجبارياً.
-        - تناسق الألوان: صمم الـ CSS بحيث تكون ألوان الأزرار، الخلفيات، والعناصر متوافقة تماماً وبشكل أنيق مع الألوان المحددة: ({product_color}).
-        - شريط الثقة: أضف <div id="top-trust-bar"> في أعلى الصفحة تماماً يحتوي على: "🚚 التوصيل بالمجان | 💵 الدفع عند الاستلام | 🛡️ ضمان استرجاع". اجعله صغيراً وأنيقاً.
-        - حجم العنوان: في قسم الهيرو، اجعل العنوان الرئيسي صغيراً نسبياً (font-size: 20px إلى 24px) لكي لا يأخذ مساحة، مما يسمح للفيديو/الصورة بالظهور بحجم كبير وواضح.
-        - التصميم (Mobile First) بعرض أقصى 480px متمركز في المنتصف.
-        
-        ⚠️ الأقسام الـ 12 الإلزامية (استخدم صور/فيديوهات Placeholders كالعادة):
-        1. <section id="hero">: فيديو خلفية (البطل)، تحته العنوان الصغير، وزر طلب.
-        2. <section id="problem">: صورة GIF توضح المشكلة.
-        3. <section id="solution">: صورة GIF توضح الحل.
-        4. <section id="unique-mechanism">: صورة تشرح الآلية الفريدة (Agora).
-        5. <section id="benefits-grid">: 4 صور مربعة للنتائج.
-        6. <section id="comparison">: صورتين متجاورتين للمقارنة.
-        7. <section id="ingredients">: 3 أيقونات للخصائص.
-        8. <section id="social-proof">: 3 فيديوهات ريلز لآراء العملاء.
-        9. <section id="expert-authority">: اقتباس لخبير.
-        10. <section id="how-to-use">: 3 خطوات مصورة.
-        11. <section id="risk-reversal">: ختم ضمان ضخم.
-        12. <section id="urgency-cta">: زر عائم بالأسفل (Sticky CTA).
-        
-        أعطني فقط كود الـ HTML والـ CSS المدمج داخل علامتي ```html و ```."""
+        أعطني فقط كود الـ HTML والـ CSS المدمج (بدون html أو body) داخل علامتي ```html و ```."""
         
         response = model.generate_content(prompt)
         code = response.text
@@ -103,10 +103,8 @@ def generate_video_scripts(api_key, product_name, strategy_text):
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel(model_name)
         prompt = f"""أنت خبير محتوى تسويقي و Copywriter محترف. 
-        اكتب 5 سكريبتات مفصلة لفيديوهات (UGC) قصيرة لمنتج: {product_name}.
-        المنصات: تيك توك، انستجرام ريلز، يوتيوب شورتس، سناب شات، فيسبوك.
-        🧠 **اعتمد في كتابتك على هذه الاستراتيجية:** {strategy_text}
-        ⚠️ الإطار الإلزامي: (AIDA). ركز على المشكلة في أول 3 ثواني، والنتيجة العاطفية في المنتصف."""
+        اكتب 5 سكريبتات مفصلة لفيديوهات (UGC) لمنتج: {product_name}. بناء على الاستراتيجية: {strategy_text}
+        الإطار الإلزامي: (AIDA). ركز على المشكلة في أول 3 ثواني، والنتيجة العاطفية في المنتصف."""
         return model.generate_content(prompt).text
     except Exception as e: return f"خطأ: {str(e)}"
 
@@ -127,25 +125,25 @@ def generate_image_prompts(api_key, product_name):
 
 # --- 5. القائمة الجانبية ---
 with st.sidebar:
-    st.title("🏗️ محرك علي V19.0")
+    st.title("🏗️ محرك علي V20.0 (YouCan Fix)")
     api_key = st.text_input("🔑 API Key", type="password")
     product_name = st.text_input("📦 اسم المنتج")
-    product_color = st.text_input("🎨 ألوان المنتج (لتنسيق الصفحة)", placeholder="مثال: أسود مطفي وذهبي")
+    product_color = st.text_input("🎨 ألوان المنتج", placeholder="مثال: أسود مطفي وذهبي")
     
     st.markdown("---")
-    st.markdown("### 💰 إعدادات المالية (نقطة التعادل)")
+    st.markdown("### 💰 إعدادات المالية")
     P = st.number_input("سعر البيع (P)", value=250.0)
     C = st.number_input("التكلفة (C)", value=50.0)
     CPL = st.number_input("تكلفة الليد (CPL)", value=15.0)
     uploaded_file = st.file_uploader("📊 ارفع ملف الإكسل", type=['xlsx', 'csv'])
 
 # --- 6. الواجهة الرئيسية ---
-st.markdown('<div class="main-header"><h1>ALI Growth Engine - CRO Optimized (V19)</h1></div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header"><h1>ALI Growth Engine - YouCan Optimized (V20)</h1></div>', unsafe_allow_html=True)
 
 if not api_key:
     st.warning("الرجاء إدخال API Key في القائمة الجانبية للبدء.")
 else:
-    tabs = st.tabs(["🎯 الاستراتيجية", "📱 صفحة الهبوط (12 قسم)", "🎬 سكريبتات الفيديو", "🖼️ استوديو الصور", "💰 التحليل المالي"])
+    tabs = st.tabs(["🎯 الاستراتيجية", "📱 صفحة الهبوط (YouCan/Shopify)", "🎬 سكريبتات الفيديو", "🖼️ استوديو الصور", "💰 التحليل المالي"])
     
     with tabs[0]:
         st.subheader("دراسة السوق وبناء الحجة (Agora)")
@@ -155,25 +153,22 @@ else:
                     st.session_state.marketing_strategy = generate_strategy(api_key, product_name)
             else: st.error("أدخل اسم المنتج!")
         if st.session_state.marketing_strategy:
-            st.text_area("نتائج الاستراتيجية (قابلة للنسخ والتمرير):", value=st.session_state.marketing_strategy, height=400)
+            st.text_area("نتائج الاستراتيجية (قابلة للنسخ):", value=st.session_state.marketing_strategy, height=400)
 
     with tabs[1]:
-        st.subheader("بناء صفحة هبوط بصرية بـ 12 قسم متوافق مع الهوية")
-        if st.button("🚀 توليد الصفحة المتكاملة"):
+        st.subheader("بناء صفحة هبوط معزولة برمجياً (متوافقة مع YouCan)")
+        if st.button("🚀 توليد الصفحة لـ YouCan"):
             if product_name:
-                # إذا لم يكتب المستخدم لوناً، نعطي تعليمة افتراضية للذكاء ليختار هو الأنسب
-                color_theme = product_color if product_color else "ألوان عصرية احترافية وجذابة تناسب المنتج"
-                
+                color_theme = product_color if product_color else "ألوان احترافية"
                 if not st.session_state.marketing_strategy:
-                    with st.spinner("جاري بناء الاستراتيجية كأساس لتصميم الصفحة..."):
+                    with st.spinner("جاري بناء الاستراتيجية كأساس..."):
                         st.session_state.marketing_strategy = generate_strategy(api_key, product_name)
-                
-                with st.spinner("جاري برمجة الصفحة، تنسيق الألوان، وإضافة شريط الثقة..."):
+                with st.spinner("جاري برمجة كود معزول تماماً ومضاد لتشوهات منصة YouCan..."):
                     st.session_state.html_code = generate_html_page(api_key, product_name, st.session_state.marketing_strategy, color_theme)
             else: st.error("أدخل اسم المنتج!")
         
         if st.session_state.html_code:
-            st.success("✅ الصفحة جاهزة! لاحظ شريط الثقة العلوي، وتناسق الألوان مع منتجك.")
+            st.success("✅ الكود جاهز ومطلي بـدرع مضاد لـ YouCan! يمكنك نسخه ولصقه بأمان.")
             components.html(st.session_state.html_code, height=750, scrolling=True)
             with st.expander("💻 عرض كود الـ HTML للنسخ"):
                 st.code(st.session_state.html_code, language='html')
@@ -183,14 +178,13 @@ else:
         if st.button("🎬 توليد السكريبتات"):
             if product_name:
                 if not st.session_state.marketing_strategy:
-                    with st.spinner("جاري بناء الاستراتيجية كأساس للسكريبتات..."):
+                    with st.spinner("جاري بناء الاستراتيجية..."):
                         st.session_state.marketing_strategy = generate_strategy(api_key, product_name)
-                        
-                with st.spinner("جاري كتابة السكريبتات التسويقية..."):
+                with st.spinner("جاري الكتابة..."):
                     st.session_state.video_scripts = generate_video_scripts(api_key, product_name, st.session_state.marketing_strategy)
             else: st.error("أدخل اسم المنتج!")
         if st.session_state.video_scripts:
-            st.text_area("السكريبتات الـ 5 (قابلة للنسخ والتمرير):", value=st.session_state.video_scripts, height=500)
+            st.text_area("السكريبتات الـ 5:", value=st.session_state.video_scripts, height=500)
 
     with tabs[3]:
         st.subheader("أوامر توليد الصور")
