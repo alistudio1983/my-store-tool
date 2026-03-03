@@ -224,3 +224,4 @@ else:
                 if results: st.table(pd.DataFrame(results))
             except Exception as e: st.error(f"خطأ: {str(e)}")
         else: st.info("ارفع ملف البيانات المالي لعرض التحليل.")
+
