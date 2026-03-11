@@ -6,7 +6,8 @@ clean_code = clean_code.replace('```', '').strip()
             return match.group(0).strip()
         
         return clean_code
-    except Exception as e: return f"<h3>خطأ في التوليد: {str(e)}</h3>"
+    except Exception as e:
+        return f"<h3>خطأ في التوليد: {str(e)}</h3>"
 
 def generate_video_scripts(api_key, product_name, strategy_text):
     try:
@@ -19,7 +20,8 @@ def generate_video_scripts(api_key, product_name, strategy_text):
         🧠 **اعتمد في كتابتك على هذه الاستراتيجية:** {strategy_text}
         ⚠️ الإطار الإلزامي: (AIDA). ركز على المشكلة في أول 3 ثواني، والنتيجة العاطفية في المنتصف."""
         return model.generate_content(prompt).text
-    except Exception as e: return f"خطأ: {str(e)}"
+    except Exception as e:
+        return f"خطأ: {str(e)}"
 
 def generate_image_prompts(api_key, product_name):
     try:
@@ -34,7 +36,8 @@ def generate_image_prompts(api_key, product_name):
         response = model.generate_content(prompt)
         prompts = response.text.split("---PROMPT_SEPARATOR---")
         return [p.strip() for p in prompts if p.strip()]
-    except: return []
+    except:
+        return []
 
 # --- 5. القائمة الجانبية ---
 with st.sidebar:
@@ -64,7 +67,8 @@ else:
             if product_name:
                 with st.spinner("جاري التحليل واستخراج الآلية الفريدة..."):
                     st.session_state.marketing_strategy = generate_strategy(api_key, product_name)
-            else: st.error("أدخل اسم المنتج!")
+            else:
+                st.error("أدخل اسم المنتج!")
         if st.session_state.marketing_strategy:
             st.text_area("نتائج الاستراتيجية (قابلة للنسخ والتمرير):", value=st.session_state.marketing_strategy, height=400)
 
@@ -80,7 +84,8 @@ else:
                 
                 with st.spinner("جاري دمج الاستراتيجية وبرمجة الأقسام الـ 13..."):
                     st.session_state.html_code = generate_html_page(api_key, product_name, st.session_state.marketing_strategy, color_theme)
-            else: st.error("أدخل اسم المنتج!")
+            else:
+                st.error("أدخل اسم المنتج!")
         
         if st.session_state.html_code:
             st.success("✅ الصفحة جاهزة! تم دمج الاستراتيجية التسويقية بنجاح مع الأقسام الـ 13.")
@@ -98,7 +103,8 @@ else:
                         
                 with st.spinner("جاري كتابة السكريبتات التسويقية..."):
                     st.session_state.video_scripts = generate_video_scripts(api_key, product_name, st.session_state.marketing_strategy)
-            else: st.error("أدخل اسم المنتج!")
+            else:
+                st.error("أدخل اسم المنتج!")
         if st.session_state.video_scripts:
             st.text_area("السكريبتات الـ 5 (قابلة للنسخ والتمرير):", value=st.session_state.video_scripts, height=500)
 
@@ -108,7 +114,8 @@ else:
             if product_name:
                 with st.spinner("المخرج الفني يعمل..."):
                     st.session_state.image_prompts = generate_image_prompts(api_key, product_name)
-            else: st.error("أدخل اسم المنتج!")
+            else:
+                st.error("أدخل اسم المنتج!")
         if st.session_state.image_prompts and len(st.session_state.image_prompts) >= 3:
             for i, p in enumerate(st.session_state.image_prompts):
                 st.markdown(f'<div class="image-prompt-box"><strong>البرومت {i+1}:</strong><br>{p}</div>', unsafe_allow_html=True)
@@ -120,8 +127,10 @@ else:
                 break_even_dr = (C + CPL) / P
                 st.info(f"💡 نقطة التعادل المحسوبة: **{round(break_even_dr * 100, 2)}%** من نسبة التسليم (DR).")
                 col_a, col_b = st.columns(2)
-                with col_a: country_col = st.selectbox("عمود الدولة:", df.columns)
-                with col_b: dr_col = st.selectbox("عمود نسبة التسليم:", df.columns)
+                with col_a:
+                    country_col = st.selectbox("عمود الدولة:", df.columns)
+                with col_b:
+                    dr_col = st.selectbox("عمود نسبة التسليم:", df.columns)
                 results = []
                 for _, row in df.iterrows():
                     try:
@@ -130,7 +139,11 @@ else:
                         if val_dr > 1: val_dr /= 100 
                         status = "✅ رابح" if val_dr >= break_even_dr else "🚨 خاسر"
                         results.append({"المنطقة": row[country_col], "التسليم (DR)": f"{round(val_dr*100, 1)}%", "التعادل المطلوب": f"{round(break_even_dr*100, 1)}%", "الحالة": status})
-                    except: continue
-                if results: st.table(pd.DataFrame(results))
-            except Exception as e: st.error(f"خطأ: {str(e)}")
-        else: st.info("ارفع ملف البيانات المالي لعرض التحليل.")
+                    except:
+                        continue
+                if results:
+                    st.table(pd.DataFrame(results))
+            except Exception as e:
+                st.error(f"خطأ: {str(e)}")
+        else:
+            st.info("ارفع ملف البيانات المالي لعرض التحليل.")
