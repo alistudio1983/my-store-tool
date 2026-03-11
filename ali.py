@@ -1,4 +1,7 @@
-<!DOCTYPE.*?>)?\s*<html.*?>.*?</html>', clean_code, re.DOTALL | re.IGNORECASE)
+clean_code = clean_code.replace('```', '').strip()
+        
+        # استخراج كود الـ HTML فقط في حال كتب الذكاء الاصطناعي أي مقدمات
+        match = re.search(r'(<!DOCTYPE.*?>)?\s*<html.*?>.*?</html>', clean_code, re.DOTALL | re.IGNORECASE)
         if match:
             return match.group(0).strip()
         
@@ -131,4 +134,3 @@ else:
                 if results: st.table(pd.DataFrame(results))
             except Exception as e: st.error(f"خطأ: {str(e)}")
         else: st.info("ارفع ملف البيانات المالي لعرض التحليل.")
-
