@@ -1,65 +1,62 @@
 import streamlit as st
 import google.generativeai as genai
 import streamlit.components.v1 as components
-import re
 
-# --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="ALI Engine V36", layout="wide")
+# --- إعدادات الواجهة الأصلية ---
+st.set_page_config(page_title="ALI Engine V19 - Original", layout="wide")
 
-def force_clean_html(text):
-    """تنظيف النص الخام وتحويله إلى كود HTML قابل للتنفيذ"""
-    if not text: return ""
-    # 1. إزالة أي نص قبل <!DOCTYPE أو <html
-    start_match = re.search(r'<(!DOCTYPE|html)', text, re.IGNORECASE)
-    if start_match:
-        text = text[start_match.start():]
-    # 2. إزالة أي نص بعد </html>
-    end_match = re.search(r'</html>', text, re.IGNORECASE)
-    if end_match:
-        text = text[:end_match.end()]
-    # 3. تنظيف علامات الماركداون المعروفة
-    text = text.replace("```html", "").replace("```", "").strip()
-    return text
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+    body, p, h1, h2, h3 { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; }
+</style>
+""", unsafe_allow_html=True)
 
-# --- 2. القائمة الجانبية ---
+# --- محرك التوليد المستقر ---
+def generate_v19(api_key, url):
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel("gemini-1.5-flash")
+    
+    # البرومت الأصلي الذي أعطاك نتائج جيدة في البداية
+    prompt = f"""
+    صمم صفحة هبوط احترافية لمنتج من الرابط التالي: {url}
+    المواصفات المطلوبة:
+    1. استخدام Tailwind CSS.
+    2. تطبيق منهجية SOP-1 (13 قسم).
+    3. لغة تسويقية قوية (Copywriting Mastery).
+    4. الخط: Cairo.
+    أعطني كود HTML فقط يبدأ بـ <!DOCTYPE html>.
+    """
+    response = model.generate_content(prompt)
+    return response.text
+
+# --- واجهة المستخدم ---
+st.title("🚀 ALI Growth Engine - نسخة V19 المستقرة")
+
 with st.sidebar:
-    st.title("⚙️ الإعدادات")
+    st.header("🔑 الإعدادات")
     api_key = st.text_input("Gemini API Key", type="password")
     product_url = st.text_input("رابط المنتج")
+    st.divider()
+    st.info("💡 هذه النسخة تعتمد على البساطة لضمان ظهور التصميم.")
 
-# --- 3. المحرك ---
-st.header("🚀 ALI Growth Engine - Visual Fix")
-
-if st.button("توليد العرض الاحترافي"):
+if st.button("توليد الصفحة"):
     if api_key and product_url:
-        try:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-1.5-flash")
+        with st.spinner("جاري التوليد..."):
+            res = generate_v19(api_key, product_url)
             
-            with st.spinner("جاري بناء الصفحة..."):
-                # البرومت الصارم لضمان 13 قسم بناءً على SOP-1
-                prompt = f"""
-                Write a HIGH-CONVERTING Landing Page for {product_url}.
-                Framework: Strictly 13 sections (SOP-1).
-                Design: Full Tailwind CSS classes, Cairo font, professional images.
-                Output: Return ONLY the HTML starting with <!DOCTYPE html>.
-                """
-                response = model.generate_content(prompt)
-                
-                # معالجة النتيجة وتخزينها
-                st.session_state.v36_html = force_clean_html(response.text)
-                st.success("تم التوليد بنجاح!")
-        except Exception as e:
-            st.error(f"خطأ: {e}")
+            # حجر الزاوية: تنظيف الكود لضمان الرندرة البصرية
+            clean_html = res.replace("```html", "").replace("```", "").strip()
+            st.session_state.v19_res = clean_html
+            st.success("تم التوليد بنجاح!")
 
-# --- 4. عرض النتائج (الحل البصري) ---
-if 'v36_html' in st.session_state:
-    tab1, tab2 = st.tabs(["📱 المعاينة البصرية", "💻 كود الصفحة"])
+# --- عرض النتائج ---
+if 'v19_res' in st.session_state:
+    tab1, tab2 = st.tabs(["📱 المعاينة البصرية", "💻 الكود المصدري"])
     
     with tab1:
-        # إذا كان الكود سليماً، سيظهر هنا كصفحة ويب
-        # قمنا بزيادة الارتفاع لضمان عدم ضياع الأقسام
-        components.html(st.session_state.v36_html, height=1500, scrolling=True)
+        # العرض المباشر الذي أثبت استقراره
+        components.html(st.session_state.v19_res, height=1000, scrolling=True)
         
     with tab2:
-        st.code(st.session_state.v36_html, language="html")
+        st.code(st.session_state.v19_res, language="html")
