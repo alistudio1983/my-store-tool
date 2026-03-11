@@ -1,68 +1,94 @@
 import streamlit as st
 import google.generativeai as genai
 import streamlit.components.v1 as components
-import re
+import base64
 
-# --- إعدادات صارمة ---
-st.set_page_config(page_title="ALI Growth Engine V27", layout="wide")
+# --- 1. إعدادات صارمة للواجهة ---
+st.set_page_config(page_title="ALI Engine V28 - Ultimate", layout="wide")
 
-def clean_html_output(raw_text):
-    """تنظيف الكود من أي نصوص زائدة أو علامات ماركداون"""
-    # البحث عن محتوى بين وسمي <html> أو علامات الكود
-    code_match = re.search(r'<html>.*</html>', raw_text, re.DOTALL | re.IGNORECASE)
-    if code_match:
-        return code_match.group(0)
-    # إذا لم يجد وسوم html، نبحث عن علامات الماركداون
-    clean_code = raw_text.replace("```html", "").replace("```", "").strip()
-    return clean_code
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+    body { background-color: #0e1117; color: white; font-family: 'Cairo'; }
+    .status-card { background: #1e293b; padding: 15px; border-radius: 10px; border: 1px solid #3b82f6; }
+</style>
+""", unsafe_allow_html=True)
 
-# --- القائمة الجانبية ---
+# --- 2. محرك الحقن البصري ---
+def display_html_safely(html_code):
+    """تحويل الكود إلى صيغة Base64 لضمان العرض في المتصفحات الصعبة"""
+    b64 = base64.b64encode(html_code.encode('utf-8')).decode('utf-8')
+    src = f"data:text/html;base64,{b64}"
+    components.iframe(src, height=1000, scrolling=True)
+
+# --- 3. لوحة التحكم ---
 with st.sidebar:
-    st.header("⚙️ الإعدادات")
+    st.title("🏗️ مركز التحكم V28")
     api_key = st.text_input("Gemini API Key", type="password")
-    product_url = st.text_input("رابط المنتج")
+    product_url = st.text_input("رابط المنتج (URL)")
     
     st.divider()
-    st.header("📊 مصفوفة البريك ايفنت")
+    st.header("📉 الحساب المالي المباشر")
     price = st.number_input("سعر البيع", value=250)
-    cost = st.number_input("التكلفة الإجمالية (منتج + شحن + CPL)", value=100)
-    # المعادلة: (التكاليف / سعر البيع) * 100
-    be_rate = (cost / price) * 100 if price > 0 else 0
+    costs = st.number_input("إجمالي التكاليف (COGS+CPL+Ship)", value=120)
+    conf = st.slider("نسبة التأكيد %", 10, 100, 80) / 100
+    
+    # حساب البريك ايفنت الفوري
+    be_rate = round(((costs / (price * conf)) * 100), 2) if (price * conf) > 0 else 0
 
-# --- الواجهة الرئيسية ---
-st.title("🚀 المحرك الجبار V27")
+# --- 4. معالجة البيانات ---
+st.header("🚀 ALI Growth Engine - Tactical Output")
 
-if st.button("🔥 توليد الآن"):
-    if api_key and product_url:
-        with st.spinner("جاري بناء الإمبراطورية..."):
+if st.button("🔥 تفعيل التوليد الشامل"):
+    if not api_key or not product_url:
+        st.error("❌ خطأ: يرجى إدخال الرابط والمفتاح.")
+    else:
+        try:
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel("gemini-1.5-flash")
             
-            # برومت صارم جداً يركز على SOP-1 و Copywriting Mastery
-            prompt = f"""
-            بصفتك خبير CRO و Copywriter (نظام Agora):
-            المنتج: {product_url}
-            المطلوب: كود HTML متكامل لصفحة هبوط بـ 13 قسم (SOP-1).
-            شروط بصرية: استخدم Tailwind CSS، خط Cairo، ألوان المنتج، Mobile-First.
-            يجب أن يبدأ الكود بـ <html> وينتهي بـ </html>.
-            لا تكتب أي كلمة خارج الكود.
-            """
-            
-            response = model.generate_content(prompt)
-            st.session_state.raw_res = response.text
-            st.session_state.clean_html = clean_html_output(response.text)
-            st.success("تم التوليد!")
+            with st.spinner("⏳ جاري استخراج البيانات وبناء الهيكل..."):
+                # البرومت الصارم المستوحى من ملفاتك (Copywriting + SOP)
+                master_prompt = f"""
+                Act as a World-Class Landing Page Designer & Copywriter.
+                Product: {product_url}
+                Framework: Agora Copywriting (PAS + FAB).
+                Instructions: Create a full HTML page with Tailwind CSS.
+                Sections (Strictly 13):
+                1. Hero with product image 2. Trust Bar 3. Problem 4. Solution 
+                5. Unique Mechanism 6. Benefits Grid 7. Comparison Table 8. Features 
+                9. Social Proof 10. Authority Quote 11. Steps 12. Guarantee 13. Sticky CTA.
+                
+                CSS: Rounded-3xl, Shadows, Cairo Font, Vibrant Colors matching the product.
+                Output: Return ONLY the raw HTML code. No conversation.
+                """
+                
+                response = model.generate_content(master_prompt)
+                
+                # تخزين النتيجة في الجلسة مع "معرف فريد" لإجبار التحديث
+                st.session_state.html_final = response.text.replace("```html", "").replace("```", "").strip()
+                st.session_state.update_id = st.session_state.get('update_id', 0) + 1
+                
+        except Exception as e:
+            st.error(f"⚠️ حدث خطأ تقني: {str(e)}")
 
-# --- عرض النتائج ---
-tab1, tab2 = st.tabs(["📱 المعاينة الحية", "📊 التحليل المالي"])
+# --- 5. العرض المقسم ---
+tab1, tab2 = st.tabs(["🖼️ المعاينة البصرية (SOP-1)", "📊 المصفوفة المالية"])
 
 with tab1:
-    if 'clean_html' in st.session_state:
-        # استخدام iframe بخصائص تسمح بالتحميل الصحيح
-        components.html(st.session_state.clean_html, height=1200, scrolling=True)
-        with st.expander("💻 عرض الكود المصدري"):
-            st.code(st.session_state.clean_html, language="html")
+    if 'html_final' in st.session_state:
+        st.success(f"✅ تم تحديث التصميم بنجاح (نسخة #{st.session_state.update_id})")
+        display_html_safely(st.session_state.html_final)
+        with st.expander("💻 الكود المصدري للنسخ"):
+            st.code(st.session_state.html_final, language="html")
+    else:
+        st.info("قم بالضغط على 'تفعيل التوليد' أعلاه لبدء العمل.")
 
 with tab2:
-    st.metric("نقطة التعادل (Delivery Rate)", f"{be_rate}%")
-    st.write(f"لتحقيق الربح، يجب أن تتجاوز نسبة التسليم لديك **{be_rate}%**.")
+    st.markdown(f"""
+    <div class="status-card">
+        <h3>نقطة التعادل المطلوبة (Delivery Rate)</h3>
+        <h1 style="color:#3b82f6;">{be_rate}%</h1>
+        <p>بناءً على سعر {price} وتكاليف {costs}، يجب أن تحقق نسبة تسليم {be_rate}% لتصل للتعادل.</p>
+    </div>
+    """, unsafe_allow_html=True)
