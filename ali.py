@@ -3,53 +3,59 @@ import google.generativeai as genai
 import streamlit.components.v1 as components
 import re
 
-st.set_page_config(page_title="ALI Engine - Final Fix", layout="wide")
+# --- 1. إعدادات الصفحة ---
+st.set_page_config(page_title="ALI Engine V32 - API Fix", layout="wide")
 
-# دالة تنظيف الكود لضمان عدم وجود فراغ
-def clean_html(text):
-    if not text: return ""
-    # إزالة علامات الماركداون
-    text = re.sub(r'```html', '', text, flags=re.IGNORECASE)
-    text = re.sub(r'```', '', text)
-    return text.strip()
+def clean_html_tags(raw_text):
+    """تنظيف الكود لضمان عرضه في المتصفح"""
+    clean = re.sub(r'```html', '', raw_text, flags=re.IGNORECASE)
+    clean = re.sub(r'```', '', clean)
+    return clean.strip()
 
+# --- 2. القائمة الجانبية ---
 with st.sidebar:
-    st.title("🛠️ الإعدادات")
-    api_key = st.text_input("Gemini API Key", type="password")
-    product_url = st.text_input("رابط المنتج (URL)")
+    st.title("🏗️ مركز الإعدادات")
+    st.info("💡 إذا ظهر خطأ 400، تأكد من مفتاح الـ API الخاص بك.")
+    api_key = st.text_input("🔑 Gemini API Key", type="password", help="احصل عليه من Google AI Studio")
+    product_url = st.text_input("🔗 رابط المنتج")
+    
+    st.divider()
+    st.markdown("[احصل على API Key مجاني من هنا](https://aistudio.google.com/app/apikey)")
 
-st.title("🚀 ALI Growth Engine")
+# --- 3. المحرك ---
+st.title("🚀 ALI Growth Engine - المصلح")
 
-if st.button("توليد صفحة الهبوط"):
-    if api_key and product_url:
+if st.button("🔥 تفعيل التوليد"):
+    if not api_key or not product_url:
+        st.warning("أرجوك أدخل المفتاح والرابط.")
+    else:
         try:
             genai.configure(api_key=api_key)
             model = genai.GenerativeModel("gemini-1.5-flash")
             
-            with st.spinner("جاري التواصل مع الذكاء الاصطناعي..."):
-                prompt = f"Create a full landing page HTML with Tailwind CSS for this product: {product_url}. Return ONLY the HTML code starting with <!DOCTYPE html>."
+            with st.spinner("⏳ جاري محاولة الاتصال بـ Google Cloud..."):
+                # طلب توليد الصفحة بناءً على المنهجية
+                prompt = f"Write a full professional landing page in HTML using Tailwind CSS for: {product_url}. Include 13 sections as per SOP-1. Return ONLY HTML code."
                 response = model.generate_content(prompt)
                 
+                # فحص هل الاستجابة تحتوي على كود
                 if response.text:
-                    st.session_state.html_content = clean_html(response.text)
-                    st.success("✅ تم التوليد بنجاح!")
+                    st.session_state.final_v32 = clean_html_tags(response.text)
+                    st.success("✅ تم الاتصال والتوليد بنجاح!")
                 else:
-                    st.error("❌ الذكاء الاصطناعي لم يرجع أي محتوى.")
+                    st.error("❌ استجاب الذكاء الاصطناعي بنص فارغ.")
+        
         except Exception as e:
-            st.error(f"❌ حدث خطأ: {str(e)}")
-    else:
-        st.warning("⚠️ أدخل المفتاح والرابط")
+            # هذا الجزء سيمسك خطأ 400 الذي ظهر في صورتك ويشرحه لك
+            if "400" in str(e):
+                st.error("❌ خطأ 400: مفتاح الـ API غير صالح. تأكد من نسخه بشكل صحيح أو قم بتوليد مفتاح جديد.")
+            else:
+                st.error(f"⚠️ خطأ فني: {str(e)}")
 
-# عرض النتائج
-if 'html_content' in st.session_state:
-    tab1, tab2 = st.tabs(["📱 المعاينة الحية", "💻 الكود المصدري"])
-    
-    with tab1:
-        # إذا كان الكود موجود ولكنه لا يظهر، سنعرف السبب هنا
-        if st.session_state.html_content:
-            components.html(st.session_state.html_content, height=1000, scrolling=True)
-        else:
-            st.warning("المحتوى فارغ، حاول التوليد مرة أخرى.")
-            
-    with tab2:
-        st.code(st.session_state.html_content, language="html")
+# --- 4. العرض ---
+if 'final_v32' in st.session_state:
+    t1, t2 = st.tabs(["📱 المعاينة الحية", "💻 الكود المصدري"])
+    with t1:
+        components.html(st.session_state.final_v32, height=900, scrolling=True)
+    with t2:
+        st.code(st.session_state.final_v32, language="html")
