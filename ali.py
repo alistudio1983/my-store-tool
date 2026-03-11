@@ -1,77 +1,72 @@
 import streamlit as st
 import google.generativeai as genai
 import streamlit.components.v1 as components
-import base64
 
 # --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="ALI Engine V29", layout="wide")
+st.set_page_config(page_title="ALI Engine V30 - Final", layout="wide")
 
-# --- 2. نظام الذاكرة الحديدية (Persistence) ---
-# هذا الجزء يضمن عدم ضياع البيانات عند أي Rerun
-if 'final_html' not in st.session_state: st.session_state.final_html = None
-if 'final_strat' not in st.session_state: st.session_state.final_strat = None
-if 'be_rate' not in st.session_state: st.session_state.be_rate = 0
+# نصوص المنهجية المدمجة (SOP & Copywriting)
+SOP_RULES = "13 Sections: Hero, Trust, Problem, Solution, Mechanism, Grid, Comparison, Specs, Social, Expert, Steps, Guarantee, Footer."
 
-# --- 3. محرك العرض الآمن ---
-def safe_display(html_content):
-    if html_content:
-        # تنظيف صارم للكود
-        clean = html_content.replace("```html", "").replace("```", "").strip()
-        b64 = base64.b64encode(clean.encode('utf-8')).decode('utf-8')
-        src = f"data:text/html;base64,{b64}"
-        components.iframe(src, height=1200, scrolling=True)
+# --- 2. دالة التوليد ---
+def generate_master_lp(api_key, url):
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel("gemini-1.5-flash")
+    
+    prompt = f"""
+    Create a professional Landing Page for: {url}
+    Rules: Use Tailwind CSS, Cairo Font, 13 Sections based on SOP: {SOP_RULES}.
+    Style: High-end E-commerce (Like Shopify Plus).
+    Output: ONLY raw HTML/CSS code. No talking.
+    """
+    return model.generate_content(prompt).text
 
-# --- 4. القائمة الجانبية (المدخلات) ---
+# --- 3. الواجهة ---
+st.title("🏗️ ALI Growth Engine V30 (The Final Solution)")
+
 with st.sidebar:
-    st.title("🏗️ ALI Engine V29")
     api_key = st.text_input("Gemini API Key", type="password")
     product_url = st.text_input("رابط المنتج")
     
     st.divider()
-    st.header("💰 الحسابات المالية")
-    price = st.number_input("سعر البيع", value=250)
-    costs = st.number_input("التكاليف الإجمالية", value=120)
-    conf = st.slider("نسبة التأكيد %", 10, 100, 80) / 100
-    
-    if st.button("🔥 توليد وحفظ البيانات"):
-        if api_key and product_url:
-            try:
-                genai.configure(api_key=api_key)
-                model = genai.GenerativeModel("gemini-1.5-flash")
-                
-                with st.spinner("⏳ جاري العمل... لا تلمس المتصفح"):
-                    # توليد الاستراتيجية أولاً
-                    strat_res = model.generate_content(f"اكتب استراتيجية Agora وسكريبتات فيديو لمنتج {product_url}")
-                    st.session_state.final_strat = strat_res.text
-                    
-                    # توليد صفحة الهبوط (SOP-1)
-                    html_prompt = f"صمم صفحة هبوط 13 قسم (Tailwind CSS) لمنتج {product_url}. ابدأ بـ <html> وانته بـ </html>. لا تكتب نصاً خارج الكود."
-                    html_res = model.generate_content(html_prompt)
-                    st.session_state.final_html = html_res.text
-                    
-                    # حساب البريك ايفنت
-                    st.session_state.be_rate = round(((costs / (price * conf)) * 100), 2) if (price * conf) > 0 else 0
-                    
-            except Exception as e:
-                st.error(f"حدث خطأ: {e}")
-        else:
-            st.warning("أدخل البيانات أولاً")
+    st.header("💰 حساب البريك ايفنت (Matrix)")
+    p_price = st.number_input("سعر البيع", value=250)
+    p_cost = st.number_input("التكلفة (منتج+شحن+CPL)", value=100)
+    # المعادلة: التكلفة تقسيم سعر البيع
+    be_rate = (p_cost / p_price) * 100 if p_price > 0 else 0
 
-# --- 5. عرض النتائج (Tabs) ---
-tab1, tab2, tab3 = st.tabs(["📱 صفحة الهبوط (SOP-1)", "🎯 الاستراتيجية والسكريبتات", "📊 المصفوفة المالية"])
+if st.button("🚀 توليد النظام الكامل وتجهيز الملف"):
+    if api_key and product_url:
+        with st.spinner("جاري استخراج البيانات وبناء الصفحة..."):
+            raw_html = generate_master_lp(api_key, product_url)
+            clean_html = raw_html.replace("```html", "").replace("```", "").strip()
+            
+            # حفظ في ذاكرة الجلسة
+            st.session_state.v30_html = clean_html
+            st.success("✅ تم التوليد بنجاح! استخدم الأزرار بالأسفل.")
 
-with tab1:
-    if st.session_state.final_html:
-        st.success("✅ تم التثبيت بنجاح")
-        safe_display(st.session_state.final_html)
-    else:
-        st.info("اضغط على الزر في الجانب لبدء التوليد")
+# --- 4. العرض (الحل الجذري للمساحة الفارغة) ---
+t1, t2 = st.tabs(["💎 لوحة التحكم والعرض", "📊 مصفوفة الأرقام"])
 
-with tab2:
-    if st.session_state.final_strat:
-        st.markdown(st.session_state.final_strat)
+with t1:
+    if 'v30_html' in st.session_state:
+        # الحل 1: زر تحميل الملف (أضمن طريقة لرؤية النتيجة)
+        st.download_button(
+            label="📥 تحميل صفحة الهبوط (HTML File)",
+            data=st.session_state.v30_html,
+            file_name="landing_page.html",
+            mime="text/html"
+        )
+        
+        # الحل 2: عرض الكود مباشرة للنسخ
+        with st.expander("📄 انسخ الكود من هنا (في حال لم يفتح الملف)"):
+            st.code(st.session_state.v30_html, language="html")
+        
+        # الحل 3: محاولة العرض المباشر (للتجربة فقط)
+        st.markdown("---")
+        st.subheader("👀 معاينة سريعة (إذا ظهرت فارغة استخدم زر التحميل أعلاه)")
+        components.html(st.session_state.v30_html, height=600, scrolling=True)
 
-with tab3:
-    st.metric("نقطة التعادل (Delivery Rate Required)", f"{st.session_state.be_rate}%")
-    st.write(f"يجب أن تكون نسبة التسليم أعلى من **{st.session_state.be_rate}%** لضمان الربح.")
-
+with t2:
+    st.metric("نقطة التعادل (Delivery Rate)", f"{be_rate:.2f}%")
+    st.info(f"يجب أن تكون نسبة تسليم الطلبيات أعلى من {be_rate:.2f}% لتحقيق أي ربح.")
