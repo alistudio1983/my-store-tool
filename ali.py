@@ -1,240 +1,189 @@
 import streamlit as st
-import pandas as pd
 import google.generativeai as genai
+import json
 import streamlit.components.v1 as components
-import re
 
-# --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="ALI Growth Engine V19", layout="wide", page_icon="🚀")
+# --- إعدادات الصفحة ---
+st.set_page_config(page_title="ALI Engine - Template System", layout="wide", page_icon="⚙️")
 
-# --- 2. التصميم (CSS) ---
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap');
-html, body, [data-testid="stAppViewContainer"], .main {
-    font-family: 'Cairo', sans-serif !important;
-    direction: rtl !important;
-    text-align: right !important;
-}
-.main-header { background: #182848; color: white; padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; }
-.image-prompt-box { background: #f0f2f6; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #ffbd45; direction: ltr; text-align: left; }
-.stDataFrame div[data-testid="stTable"] { direction: ltr !important; }
-.stDataFrame td, .stDataFrame th { text-align: center !important; }
-div.stTextArea textarea { font-family: 'Cairo', sans-serif !important; font-size: 16px; direction: rtl; line-height: 1.6; }
+    body { font-family: 'Cairo', sans-serif; direction: rtl; text-align: right; }
+    .main-header { background: #1e293b; color: white; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px;}
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. تهيئة الذاكرة ---
-if 'html_code' not in st.session_state:
-    st.session_state.html_code = ""
-if 'image_prompts' not in st.session_state:
-    st.session_state.image_prompts = []
-if 'video_scripts' not in st.session_state:
-    st.session_state.video_scripts = ""
-if 'marketing_strategy' not in st.session_state:
-    st.session_state.marketing_strategy = ""
+st.markdown('<div class="main-header"><h1>⚙️ ALI Growth Engine (نظام القوالب الصاروخي)</h1></div>', unsafe_allow_html=True)
 
-# --- 4. دوال الذكاء الاصطناعي (النسخة الصاروخية) ---
+# ==========================================================
+# 🧱 الخطوة 2: القالب الصلب (Hard-Coded HTML Template)
+# هذا القالب مخزن في النظام، مستحيل أن ينكسر، ومبني بـ Tailwind
+# ==========================================================
+MASTER_TEMPLATE = """
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Cairo', sans-serif; background-color: #f8fafc; }</style>
+</head>
+<body class="text-gray-800 antialiased">
+    
+    <!-- شريط الثقة -->
+    <div class="bg-gray-900 text-white text-center py-2 text-sm font-bold tracking-wide">
+        🚚 شحن مجاني اليوم | 💳 دفع آمن | 🛡️ ضمان ذهبي
+    </div>
 
-def generate_strategy(api_key, product_name):
-    try:
-        genai.configure(api_key=api_key)
-        # استخدام الموديل الأسرع مباشرة لتوفير وقت البحث
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        prompt = f"""أنت خبير أبحاث تسويقية من مدرسة Agora العملاقة.
-        المطلوب: دراسة سوق لمنتج: {product_name}.
-        ⚠️ ركز على: 1. الآلية الفريدة، 2. الحجة التي لا تقهر، 3. المعتقدات الأساسية، 4. فجوات السوق.
-        اكتب باللغة العربية الفصحى بشكل منظم وواضح."""
-        return model.generate_content(prompt).text
-    except Exception as e:
-        return f"خطأ: {str(e)}"
+    <!-- Hero Section -->
+    <section class="bg-white py-16 px-4 shadow-sm">
+        <div class="max-w-3xl mx-auto text-center">
+            <h1 class="text-4xl md:text-5xl font-black text-blue-900 mb-6 leading-tight">{{HERO_HEADLINE}}</h1>
+            <p class="text-xl text-gray-600 mb-8">{{HERO_SUB}}</p>
+            <a href="#buy" class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-12 rounded-full text-xl inline-block shadow-lg transition transform hover:-translate-y-1 animate-pulse">{{CTA_BUTTON}}</a>
+        </div>
+    </section>
 
-def generate_html_page(api_key, product_name, strategy_text, product_color):
-    try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        
-        prompt = f"""أنت أعظم مبرمج ومصمم لصفحات الهبوط البصرية (Visual-First) وخبير Copywriting بمستوى دان كينيدي.
-        المطلوب: برمجة كود HTML و CSS متكامل لصفحة هبوط لمنتج: {product_name}.
-        ألوان الهوية المطلوبة للمنتج: {product_color}.
-        
-        🧠 **[قانون تسويقي صارم جداً]:** يجب أن تُبنى جميع النصوص (العناوين، الفقرات، وزوايا البيع) حرفياً وبذكاء تسويقي عالي بناءً على هذا التقرير الاستراتيجي:
-        --- بداية التقرير ---
-        {strategy_text}
-        --- نهاية التقرير ---
-        ⚠️ تأكد من دمج (الآلية الفريدة، الحجة التي لا تقهر، وفجوات السوق) داخل نصوص الصفحة لكسر كل اعتراضات العميل الشرائية. لا تكتب نصوصاً عشوائية، بل اجعل كل كلمة تخدم زاوية بيع من التقرير.
-        
-        ⚠️ قوانين التصميم الإلزامية (تحديث CRO):
-        - ابدأ الكود بـ <html lang="ar" dir="rtl"> إجبارياً.
-        - تناسق الألوان: صمم الـ CSS بحيث تكون ألوان الأزرار، الخلفيات، والعناصر متوافقة تماماً وبشكل أنيق مع الألوان المحددة: ({product_color}).
-        - شريط الثقة: أضف <div id="top-trust-bar"> في أعلى الصفحة تماماً.
-        - التصميم (Mobile First) بعرض أقصى 480px متمركز في المنتصف.
-        
-        ⚠️ الأقسام الـ 13 الإلزامية (يجب أن تتسلسل بهذا الترتيب لتشكيل قمع مبيعات متكامل، استخدم روابط وهمية للصور/الفيديوهات):
-        1. <section id="hero">: فيديو خلفية (البطل)، تحته العنوان الصغير الجذاب (مستوحى من الحجة التي لا تقهر)، وزر طلب.
-        2. <section id="trust-icons"> (القسم 13 الجديد): قسم الأيقونات السريعة أسفل الهيرو (مثل: جودة أصلية 100%، آمن ومجرب، توصيل سريع). 3 أو 4 أيقونات دائرية صغيرة.
-        3. <section id="problem">: صورة GIF توضح المشكلة (اضرب على ألم العميل المذكور في التقرير).
-        4. <section id="solution">: صورة GIF توضح الحل.
-        5. <section id="unique-mechanism">: صورة تشرح الآلية الفريدة (Agora) المذكورة في التقرير.
-        6. <section id="benefits-grid">: 4 صور مربعة للنتائج المرغوبة.
-        7. <section id="comparison">: صورتين متجاورتين للمقارنة (توضح فجوة السوق للماسكات التقليدية).
-        8. <section id="ingredients">: 3 أيقونات للخصائص والمكونات.
-        9. <section id="social-proof">: 3 فيديوهات ريلز لآراء العملاء.
-        10. <section id="expert-authority">: اقتباس لخبير يثبت المعتقدات الأساسية.
-        11. <section id="how-to-use">: 3 خطوات مصورة بسيطة.
-        12. <section id="risk-reversal">: ختم ضمان ضخم يزيل المخاطرة تماماً.
-        13. <section id="urgency-cta">: زر عائم بالأسفل (Sticky CTA) مع عداد ندرة.
-        
-        أعطني فقط كود الـ HTML والـ CSS الصافي. ابدأ بـ <!DOCTYPE html> وانتهِ بـ </html>. لا تكتب أي نصوص أو شروحات."""
-        
-        response = model.generate_content(prompt)
-        
-        # حيلة برمجية لمنع النظام من بتر الكود أثناء النقل
-        tb = "`" * 3
-        clean_code = response.text.replace(tb + "html", "").replace(tb + "css", "").replace(tb + "HTML", "").replace(tb, "").strip()
-        
-        match = re.search(r'(<!DOCTYPE.*?>)?\s*<html.*?>.*?</html>', clean_code, re.DOTALL | re.IGNORECASE)
-        if match:
-            return match.group(0).strip()
-        
-        return clean_code
-    except Exception as e:
-        return f"<h3>خطأ في التوليد: {str(e)}</h3>"
+    <!-- Problem Section (Agitation) -->
+    <section class="py-16 px-4 bg-red-50 text-center">
+        <div class="max-w-3xl mx-auto">
+            <h2 class="text-3xl font-bold text-red-600 mb-4">⚠️ {{PROBLEM_TITLE}}</h2>
+            <p class="text-lg text-gray-700 font-medium">{{PROBLEM_DESC}}</p>
+        </div>
+    </section>
 
-def generate_video_scripts(api_key, product_name, strategy_text):
-    try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        prompt = f"""أنت خبير محتوى تسويقي و Copywriter محترف. 
-        اكتب 5 سكريبتات مفصلة لفيديوهات (UGC) قصيرة لمنتج: {product_name}.
-        المنصات: تيك توك، انستجرام ريلز، يوتيوب شورتس، سناب شات، فيسبوك.
-        🧠 **اعتمد في كتابتك على هذه الاستراتيجية:** {strategy_text}
-        ⚠️ الإطار الإلزامي: (AIDA). ركز على المشكلة في أول 3 ثواني، والنتيجة العاطفية في المنتصف."""
-        return model.generate_content(prompt).text
-    except Exception as e:
-        return f"خطأ: {str(e)}"
+    <!-- Solution Section (The Savior) -->
+    <section class="py-16 px-4 bg-green-50 text-center">
+        <div class="max-w-3xl mx-auto">
+            <h2 class="text-3xl font-bold text-green-600 mb-4">✨ {{SOLUTION_TITLE}}</h2>
+            <p class="text-lg text-gray-700 font-medium">{{SOLUTION_DESC}}</p>
+        </div>
+    </section>
 
-def generate_image_prompts(api_key, product_name):
-    try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        prompt = f"""اكتب 3 برومتات احترافية باللغة الإنجليزية لتوليد صور لمنتج: "{product_name}".
-        1. Hero Shot
-        2. Lifestyle Shot
-        3. Macro Shot
-        افصل بينها بـ: "---PROMPT_SEPARATOR---" """
-        response = model.generate_content(prompt)
-        prompts = response.text.split("---PROMPT_SEPARATOR---")
-        return [p.strip() for p in prompts if p.strip()]
-    except:
-        return []
+    <!-- Benefits Grid -->
+    <section class="py-16 px-4">
+        <div class="max-w-5xl mx-auto">
+            <h2 class="text-3xl font-black text-center text-gray-800 mb-10">لماذا يختاره الجميع؟</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {{BENEFITS_HTML}}
+            </div>
+        </div>
+    </section>
 
-# --- 5. القائمة الجانبية ---
+    <!-- Guarantee & Sticky CTA -->
+    <section class="bg-blue-900 text-white py-16 px-4 text-center pb-32">
+        <div class="max-w-3xl mx-auto">
+            <div class="text-6xl mb-4">🛡️</div>
+            <h3 class="text-2xl font-bold text-yellow-400 mb-4">ضمان ذهبي 100%</h3>
+            <p class="text-lg mb-8">{{GUARANTEE}}</p>
+        </div>
+    </section>
+
+    <!-- Sticky Footer CTA -->
+    <div class="fixed bottom-0 left-0 w-full bg-white p-4 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] text-center flex justify-center border-t-2 border-gray-100">
+        <a href="#buy" class="bg-green-600 text-white font-black py-3 px-10 rounded-xl text-lg w-full max-w-md shadow-lg animate-bounce">{{CTA_BUTTON}}</a>
+    </div>
+
+</body>
+</html>
+"""
+
+# ==========================================================
+# 🧠 الخطوة 1: المحرك اللفظي (JSON Generator)
+# ==========================================================
+def generate_landing_page_json(api_key, product):
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel("gemini-1.5-flash") # موديل سريع جداً
+    
+    prompt = f"""
+    أنت أعظم Copywriter. اكتب محتوى تسويقي قوي لمنتج: "{product}".
+    رد حصراً بـ JSON صالح (Valid JSON) بهذا الهيكل:
+    {{
+        "hero_headline": "عنوان رئيسي صادم",
+        "hero_subheadline": "عنوان فرعي مقنع",
+        "problem_title": "عنوان المشكلة",
+        "problem_description": "وصف ألم العميل",
+        "solution_title": "عنوان الحل",
+        "solution_description": "وصف الآلية الفريدة",
+        "benefits": ["فائدة قوية 1", "فائدة قوية 2", "فائدة قوية 3"],
+        "guarantee": "نص عكس المخاطرة",
+        "call_to_action": "نص زر الشراء القوي"
+    }}
+    لا تكتب أي حرف خارج الـ JSON.
+    """
+    
+    response = model.generate_content(
+        prompt,
+        generation_config=genai.GenerationConfig(response_mime_type="application/json")
+    )
+    return response.text
+
+# ==========================================================
+# 💉 الخطوة 3: محرك الحقن (Data Binding Engine)
+# ==========================================================
+def inject_data_into_template(json_data):
+    # تجهيز كود الفوائد (Benefits) ديناميكياً
+    benefits_html = ""
+    for benefit in json_data.get('benefits', []):
+        benefits_html += f"""
+        <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100 text-center hover:shadow-lg transition">
+            <div class="text-3xl mb-3">✅</div>
+            <p class="font-bold text-gray-800">{benefit}</p>
+        </div>
+        """
+    
+    # استبدال المتغيرات في القالب الصلب
+    final_html = MASTER_TEMPLATE
+    final_html = final_html.replace("{{HERO_HEADLINE}}", json_data.get("hero_headline", ""))
+    final_html = final_html.replace("{{HERO_SUB}}", json_data.get("hero_subheadline", ""))
+    final_html = final_html.replace("{{PROBLEM_TITLE}}", json_data.get("problem_title", ""))
+    final_html = final_html.replace("{{PROBLEM_DESC}}", json_data.get("problem_description", ""))
+    final_html = final_html.replace("{{SOLUTION_TITLE}}", json_data.get("solution_title", ""))
+    final_html = final_html.replace("{{SOLUTION_DESC}}", json_data.get("solution_description", ""))
+    final_html = final_html.replace("{{GUARANTEE}}", json_data.get("guarantee", ""))
+    final_html = final_html.replace("{{CTA_BUTTON}}", json_data.get("call_to_action", ""))
+    final_html = final_html.replace("{{BENEFITS_HTML}}", benefits_html)
+    
+    return final_html
+
+# --- واجهة المستخدم (Sidebar & Main) ---
 with st.sidebar:
-    st.title("🏗️ محرك علي V19.0")
-    api_key = st.text_input("🔑 API Key", type="password")
-    product_name = st.text_input("📦 اسم المنتج")
-    product_color = st.text_input("🎨 ألوان المنتج (لتنسيق الصفحة)", placeholder="مثال: أسود مطفي وذهبي")
-    
-    st.markdown("---")
-    st.markdown("### 💰 إعدادات المالية (نقطة التعادل)")
-    P = st.number_input("سعر البيع (P)", value=250.0)
-    C = st.number_input("التكلفة (C)", value=50.0)
-    CPL = st.number_input("تكلفة الليد (CPL)", value=15.0)
-    uploaded_file = st.file_uploader("📊 ارفع ملف الإكسل", type=['xlsx', 'csv'])
+    st.header("⚙️ إعدادات المحرك")
+    api_key = st.text_input("🔑 أدخل API Key", type="password")
+    product_name = st.text_input("📦 اسم/وصف المنتج")
+    start_btn = st.button("⚡ توليد الصفحة (5 ثوانٍ)")
 
-# --- 6. الواجهة الرئيسية ---
-st.markdown('<div class="main-header"><h1>ALI Growth Engine - CRO Optimized (V19)</h1></div>', unsafe_allow_html=True)
-
-if not api_key:
-    st.warning("الرجاء إدخال API Key في القائمة الجانبية للبدء.")
-else:
-    tabs = st.tabs(["🎯 الاستراتيجية", "📱 صفحة الهبوط (13 قسم)", "🎬 سكريبتات الفيديو", "🖼️ استوديو الصور", "💰 التحليل المالي"])
-    
-    with tabs[0]:
-        st.subheader("دراسة السوق وبناء الحجة (Agora)")
-        if st.button("🧠 استخراج الاستراتيجية"):
-            if product_name:
-                with st.spinner("جاري التحليل واستخراج الآلية الفريدة..."):
-                    st.session_state.marketing_strategy = generate_strategy(api_key, product_name)
-            else:
-                st.error("أدخل اسم المنتج!")
-        if st.session_state.marketing_strategy:
-            st.text_area("نتائج الاستراتيجية (قابلة للنسخ والتمرير):", value=st.session_state.marketing_strategy, height=400)
-
-    with tabs[1]:
-        st.subheader("بناء صفحة هبوط بصرية بـ 13 قسم متوافق مع الهوية والاستراتيجية")
-        if st.button("🚀 توليد الصفحة المتكاملة"):
-            if product_name:
-                color_theme = product_color if product_color else "ألوان عصرية احترافية وجذابة تناسب المنتج"
-                
-                if not st.session_state.marketing_strategy:
-                    with st.spinner("جاري بناء الاستراتيجية كأساس لتصميم الصفحة... (قد يستغرق 5 ثوانٍ إضافية)"):
-                        st.session_state.marketing_strategy = generate_strategy(api_key, product_name)
-                
-                with st.spinner("جاري دمج الاستراتيجية وبرمجة الأقسام الـ 13..."):
-                    st.session_state.html_code = generate_html_page(api_key, product_name, st.session_state.marketing_strategy, color_theme)
-            else:
-                st.error("أدخل اسم المنتج!")
-        
-        if st.session_state.html_code:
-            st.success("✅ الصفحة جاهزة! تم دمج الاستراتيجية التسويقية بنجاح مع الأقسام الـ 13.")
-            components.html(st.session_state.html_code, height=750, scrolling=True)
-            with st.expander("💻 عرض كود الـ HTML للنسخ"):
-                st.code(st.session_state.html_code, language='html')
-
-    with tabs[2]:
-        st.subheader("توليد 5 سكريبتات فيديو")
-        if st.button("🎬 توليد السكريبتات"):
-            if product_name:
-                if not st.session_state.marketing_strategy:
-                    with st.spinner("جاري بناء الاستراتيجية كأساس للسكريبتات..."):
-                        st.session_state.marketing_strategy = generate_strategy(api_key, product_name)
-                        
-                with st.spinner("جاري كتابة السكريبتات التسويقية..."):
-                    st.session_state.video_scripts = generate_video_scripts(api_key, product_name, st.session_state.marketing_strategy)
-            else:
-                st.error("أدخل اسم المنتج!")
-        if st.session_state.video_scripts:
-            st.text_area("السكريبتات الـ 5 (قابلة للنسخ والتمرير):", value=st.session_state.video_scripts, height=500)
-
-    with tabs[3]:
-        st.subheader("أوامر توليد الصور")
-        if st.button("🖼️ توليد البرومتات"):
-            if product_name:
-                with st.spinner("المخرج الفني يعمل..."):
-                    st.session_state.image_prompts = generate_image_prompts(api_key, product_name)
-            else:
-                st.error("أدخل اسم المنتج!")
-        if st.session_state.image_prompts and len(st.session_state.image_prompts) >= 3:
-            for i, p in enumerate(st.session_state.image_prompts):
-                st.markdown(f'<div class="image-prompt-box"><strong>البرومت {i+1}:</strong><br>{p}</div>', unsafe_allow_html=True)
-
-    with tabs[4]:
-        if uploaded_file:
+if start_btn:
+    if not api_key or not product_name:
+        st.error("يرجى إدخال المفتاح واسم المنتج.")
+    else:
+        with st.spinner("1️⃣ جاري استخراج العقول التسويقية (JSON)..."):
             try:
-                df = pd.read_excel(uploaded_file) if uploaded_file.name.endswith('.xlsx') else pd.read_csv(uploaded_file)
-                break_even_dr = (C + CPL) / P
-                st.info(f"💡 نقطة التعادل المحسوبة: **{round(break_even_dr * 100, 2)}%** من نسبة التسليم (DR).")
-                col_a, col_b = st.columns(2)
-                with col_a:
-                    country_col = st.selectbox("عمود الدولة:", df.columns)
-                with col_b:
-                    dr_col = st.selectbox("عمود نسبة التسليم:", df.columns)
-                results = []
-                for _, row in df.iterrows():
-                    try:
-                        raw_dr = str(row[dr_col]).replace('%', '').strip()
-                        val_dr = float(raw_dr)
-                        if val_dr > 1:
-                            val_dr /= 100 
-                        status = "✅ رابح" if val_dr >= break_even_dr else "🚨 خاسر"
-                        results.append({"المنطقة": row[country_col], "التسليم (DR)": f"{round(val_dr*100, 1)}%", "التعادل المطلوب": f"{round(break_even_dr*100, 1)}%", "الحالة": status})
-                    except:
-                        continue
-                if results:
-                    st.table(pd.DataFrame(results))
+                # 1. جلب الكلمات
+                raw_json = generate_landing_page_json(api_key, product_name)
+                parsed_data = json.loads(raw_json)
+                
+                # 2. الحقن في القالب
+                with st.spinner("2️⃣ جاري حقن البيانات في القالب الصلب..."):
+                    st.session_state.final_page = inject_data_into_template(parsed_data)
+                    st.session_state.json_data = parsed_data
+                    
+                st.success("🎉 اكتمل بناء الصفحة في ثوانٍ معدودة وبدون أخطاء تصميم!")
             except Exception as e:
-                st.error(f"خطأ: {str(e)}")
-        else:
-            st.info("ارفع ملف البيانات المالي لعرض التحليل.")
+                st.error(f"حدث خطأ في جلب البيانات: {str(e)}")
+
+# --- العرض (التبويبات) ---
+if 'final_page' in st.session_state:
+    tab1, tab2, tab3 = st.tabs(["📱 المعاينة الحية (Template Engine)", "💻 كود HTML للنسخ", "📝 البيانات الخام (JSON)"])
+    
+    with tab1:
+        st.info("💡 هذه الصفحة مبنية بنظام القوالب. لا يمكن أن تظهر شاشة بيضاء أبداً!")
+        # تم تصغير العرض ليحاكي شاشة الجوال (Mobile View)
+        components.html(st.session_state.final_page, height=850, scrolling=True)
+        
+    with tab2:
+        st.code(st.session_state.final_page, language="html")
+        
+    with tab3:
+        st.json(st.session_state.json_data)
