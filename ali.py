@@ -4,7 +4,6 @@ import json
 import streamlit.components.v1 as components
 import re
 import urllib.parse
-import random
 
 # --- إعدادات الصفحة ---
 st.set_page_config(page_title="ALI Engine - 1-Click Magic", layout="wide", page_icon="⚡")
@@ -17,7 +16,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="main-header"><h1>⚡ ALI Growth Engine (بضغطة زر)</h1><p style="color:#94a3b8; margin:0;">صفحات هبوط كاملة (نصوص + صور ذكية حية) ببرومت واحد فقط</p></div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header"><h1>⚡ ALI Growth Engine (الصور الفورية)</h1><p style="color:#94a3b8; margin:0;">صفحات هبوط كاملة (نصوص + صور سريعة جداً) ببرومت واحد فقط</p></div>', unsafe_allow_html=True)
 
 # ==========================================================
 # 🧱 الخطوة 2: القالب الشامل (1-Click Template)
@@ -45,9 +44,7 @@ MASTER_TEMPLATE = """
         .text-accent { color: var(--accent); }
         section { position: relative; padding: 3rem 1.5rem; }
         .no-pad { padding: 0 !important; }
-        /* تصميم يحمي شكل الصفحة في حال تأخرت الصورة في التحميل */
         .img-fallback { background-color: #f3f4f6; display: block; position: relative; }
-        .img-fallback::before { content: 'جاري توليد الصورة... ⏳'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #9ca3af; font-weight: bold; font-size: 0.8rem; z-index: -1;}
     </style>
 </head>
 <body class="text-gray-800 antialiased pb-24 flex justify-center">
@@ -60,7 +57,7 @@ MASTER_TEMPLATE = """
 
         <!-- Hero Section -->
         <section class="no-pad relative w-full bg-gray-900">
-            <img src="https://image.pollinations.ai/prompt/{{IMAGE_HERO}}?width=800&height=1000&nologo=true&seed={{SEED}}" class="w-full h-[500px] object-cover opacity-90 img-fallback" alt="Hero Image">
+            <img src="https://image.pollinations.ai/prompt/{{IMAGE_HERO}}?width=800&height=1000&nologo=true" class="w-full h-[500px] object-cover opacity-90 img-fallback" alt="Hero Image" referrerpolicy="no-referrer" loading="lazy">
             <div class="absolute bottom-0 left-0 w-full h-3/4 bg-gradient-to-t from-[var(--primary)] to-transparent"></div>
             <div class="absolute bottom-0 left-0 w-full p-6 text-white text-center z-10">
                 <div class="inline-block bg-accent text-white px-4 py-1 rounded-full text-xs font-black mb-4 shadow-lg animate-pulse">عرض حصري</div>
@@ -73,7 +70,7 @@ MASTER_TEMPLATE = """
         <!-- Problem Section -->
         <section class="bg-white text-center border-b border-gray-100">
             <h2 class="text-2xl font-black mb-5 text-red-600">⚠️ {{PROBLEM_TITLE}}</h2>
-            <img src="https://image.pollinations.ai/prompt/{{IMAGE_PROBLEM}}?width=600&height=400&nologo=true&seed={{SEED}}" class="w-full h-56 object-cover rounded-2xl shadow-md mb-5 img-fallback" alt="Problem Image">
+            <img src="https://image.pollinations.ai/prompt/{{IMAGE_PROBLEM}}?width=600&height=400&nologo=true" class="w-full h-56 object-cover rounded-2xl shadow-md mb-5 img-fallback" alt="Problem Image" referrerpolicy="no-referrer" loading="lazy">
             <p class="text-lg font-bold text-gray-700 leading-relaxed">{{PROBLEM_DESC}}</p>
         </section>
 
@@ -81,7 +78,7 @@ MASTER_TEMPLATE = """
         <section class="bg-primary text-white text-center rounded-3xl shadow-xl relative z-20 mx-2 -mt-4 mb-4">
             <h2 class="text-3xl font-black text-accent mb-4 drop-shadow-sm">✨ {{SOLUTION_TITLE}}</h2>
             <p class="text-lg font-bold mb-6 text-gray-100">{{SOLUTION_DESC}}</p>
-            <img src="https://image.pollinations.ai/prompt/{{IMAGE_SOLUTION}}?width=800&height=600&nologo=true&seed={{SEED}}" class="w-full h-64 object-cover rounded-2xl shadow-xl border-4 border-white img-fallback" alt="Solution Image">
+            <img src="https://image.pollinations.ai/prompt/{{IMAGE_SOLUTION}}?width=800&height=600&nologo=true" class="w-full h-64 object-cover rounded-2xl shadow-xl border-4 border-white img-fallback" alt="Solution Image" referrerpolicy="no-referrer" loading="lazy">
         </section>
 
         <!-- Benefits & Features -->
@@ -142,7 +139,7 @@ MASTER_TEMPLATE = """
 """
 
 # ==========================================================
-# 🧠 الخطوة 1: المحرك اللفظي (One-Prompt Magic)
+# 🧠 الخطوة 1: المحرك اللفظي السريع جداً (أوامر صور قصيرة)
 # ==========================================================
 def get_fast_working_model(api_key):
     if 'valid_model_name' in st.session_state:
@@ -162,30 +159,30 @@ def generate_landing_page_json(api_key, product, category):
     model_name = get_fast_working_model(api_key)
     model = genai.GenerativeModel(model_name)
     
+    # ⚠️ السر هنا: تم إجبار الموديل على استخدام (1 إلى 3 كلمات كحد أقصى) لوصف الصورة لكي تظهر فوراً من الكاش
     prompt = f"""
-    أنت أعظم خبير تسويق لصفحات الهبوط (Infographic Sales Pages).
-    المنتج: "{product}". 
-    الفئة: {"مستحضرات تجميل وعناية" if "Cosmetics" in category else "أدوات وأجهزة ذكية"}.
+    أنت خبير تسويق لصفحات الهبوط (Infographic Sales Pages).
+    المنتج: "{product}". الفئة: {"مستحضرات تجميل وعناية" if "Cosmetics" in category else "أدوات وأجهزة ذكية"}.
     
-    ⚠️ قانون صارم: جميع النصوص للعميل يجب أن تكون بـ "العربية الفصحى". 
-    حقول الصور (image_prompts) فقط بالإنجليزية لوصف الصورة لمولد الصور.
+    ⚠️ قانون صارم: النصوص للعميل بـ "العربية الفصحى". 
+    ⚠️ قانون الصور: حقول (image_prompts) يجب أن تكون بالإنجليزية وتتكون من (1 إلى 3 كلمات فقط) لوصف الصورة بشكل عام وعريض جداً.
 
     رد بصيغة JSON صالحة بهذا الهيكل الدقيق:
     {{
-        "hero_headline": "عنوان رئيسي قصير وصادم (عربي)",
+        "hero_headline": "عنوان رئيسي (عربي)",
         "hero_subheadline": "عنوان فرعي (عربي)",
-        "image_hero_prompt": "English prompt for AI image showing the {product} in a beautiful studio shot, highly detailed, 4k",
+        "image_hero_prompt": "1 to 3 english words ONLY (e.g. 'shampoo bottle' or 'face wash')",
         "problem_title": "عنوان المشكلة (عربي)",
-        "problem_description": "وصف المشكلة بشكل عاطفي (عربي)",
-        "image_problem_prompt": "English prompt for AI image showing a person frustrated with the problem that {product} solves",
+        "problem_description": "وصف المشكلة (عربي)",
+        "image_problem_prompt": "1 to 3 english words ONLY (e.g. 'sad woman' or 'dirty car')",
         "solution_title": "عنوان الحل (عربي)",
-        "solution_description": "كيف يحل المنتج المشكلة (عربي)",
-        "image_solution_prompt": "English prompt for AI image showing a happy person enjoying the results of {product}",
+        "solution_description": "وصف الحل (عربي)",
+        "image_solution_prompt": "1 to 3 english words ONLY (e.g. 'happy woman' or 'clean face')",
         "mechanism_title": "كيف يعمل؟ (عربي)",
-        "mechanism_description": "وصف الآلية باختصار (عربي)",
+        "mechanism_description": "وصف الآلية (عربي)",
         "benefits": ["فائدة 1 (عربي)", "فائدة 2 (عربي)", "فائدة 3 (عربي)"],
         "dynamic_items": [
-            {{"title": "اسم المكون أو الخطوة (عربي)", "desc": "شرح (عربي)", "image_prompt": "English prompt for macro photo or illustration of this item"}}
+            {{"title": "اسم المكون أو الخطوة (عربي)", "desc": "شرح (عربي)", "image_prompt": "1 to 2 english words ONLY (e.g. 'aloe vera')"}}
         ],
         "reviews": [
             {{"name": "اسم عميل", "rating": 5, "comment": "تعليق إيجابي (عربي)"}}
@@ -211,18 +208,15 @@ def generate_landing_page_json(api_key, product, category):
 # ==========================================================
 
 def safe_quote(text):
-    # ⚠️ فلتر حديدي: يزيل أي حرف عربي أو رمز غير مسموح به لضمان عدم انكسار الرابط
-    clean_text = re.sub(r'[^a-zA-Z0-9\s,.-]', '', str(text))
-    # إذا كان النص فارغاً بعد التنظيف (في حال أخطأ الذكاء واقتصر على العربية)، نضع وصفاً افتراضياً
-    if not clean_text.strip():
-        clean_text = "beautiful product photography high quality"
-    return urllib.parse.quote(clean_text.strip())
+    # تنظيف النص بشراسة للإبقاء على الحروف الإنجليزية والمسافات فقط (يمنع كسر الروابط نهائياً)
+    clean_text = re.sub(r'[^a-zA-Z\s]', '', str(text)).strip()
+    if not clean_text:
+        clean_text = "product"
+    # استبدال المسافات بـ %20
+    return urllib.parse.quote(clean_text)
 
 def inject_data_into_template(json_data, category, colors):
     final_html = MASTER_TEMPLATE
-    
-    # بصمة عشوائية لتجديد الصور في كل مرة
-    current_seed = str(random.randint(1000, 99999))
     
     # 1. الفوائد
     benefits_html = ""
@@ -235,7 +229,7 @@ def inject_data_into_template(json_data, category, colors):
             <p class="font-bold text-gray-800 text-right">{benefit}</p>
         </div>'''
 
-    # 2. القسم الديناميكي (مكونات أو خطوات مع صور ذكية)
+    # 2. القسم الديناميكي (مكونات أو خطوات مع صور سريعة التحميل)
     dynamic_html = ""
     section_title = "السر في مكوناتنا الطبيعية" if "Cosmetics" in category else "طريقة الاستخدام بخطوات بسيطة"
     dynamic_html += f'<h2 class="text-3xl font-black text-center text-primary mb-8">{section_title}</h2><div class="grid grid-cols-1 gap-5">'
@@ -243,10 +237,11 @@ def inject_data_into_template(json_data, category, colors):
     for item in json_data.get('dynamic_items', [])[:3]:
         title = item.get('title', '')
         desc = item.get('desc', '')
-        img_prompt = safe_quote(item.get('image_prompt', f"macro photography of {title}"))
+        img_prompt = safe_quote(item.get('image_prompt', "item"))
+        # إضافة referrerpolicy و loading lazy لضمان عدم توقف المتصفح
         dynamic_html += f'''
         <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200 flex items-center gap-4 text-right shadow-sm">
-            <img src="https://image.pollinations.ai/prompt/{img_prompt}?width=200&height=200&nologo=true&seed={current_seed}" class="w-20 h-20 rounded-full shadow-md border-2 border-accent object-cover flex-shrink-0 img-fallback" alt="Feature Image">
+            <img src="https://image.pollinations.ai/prompt/{img_prompt}?width=200&height=200&nologo=true" class="w-20 h-20 rounded-full shadow-md border-2 border-accent object-cover flex-shrink-0 img-fallback" alt="{title}" referrerpolicy="no-referrer" loading="lazy">
             <div>
                 <h4 class="font-black text-primary text-lg mb-1">{title}</h4>
                 <p class="text-sm font-medium text-gray-600">{desc}</p>
@@ -285,12 +280,9 @@ def inject_data_into_template(json_data, category, colors):
     final_html = final_html.replace("{{COLOR_SECONDARY}}", colors['secondary'])
     final_html = final_html.replace("{{COLOR_ACCENT}}", colors['accent'])
 
-    final_html = final_html.replace("{{IMAGE_HERO}}", safe_quote(json_data.get("image_hero_prompt", "product high quality")))
-    final_html = final_html.replace("{{IMAGE_PROBLEM}}", safe_quote(json_data.get("image_problem_prompt", "problem frustration")))
-    final_html = final_html.replace("{{IMAGE_SOLUTION}}", safe_quote(json_data.get("image_solution_prompt", "solution happiness")))
-    
-    # حقن البصمة العشوائية لمنع الذاكرة المؤقتة للصور المكسورة
-    final_html = final_html.replace("{{SEED}}", current_seed)
+    final_html = final_html.replace("{{IMAGE_HERO}}", safe_quote(json_data.get("image_hero_prompt", "product")))
+    final_html = final_html.replace("{{IMAGE_PROBLEM}}", safe_quote(json_data.get("image_problem_prompt", "sad person")))
+    final_html = final_html.replace("{{IMAGE_SOLUTION}}", safe_quote(json_data.get("image_solution_prompt", "happy person")))
 
     final_html = final_html.replace("{{HERO_HEADLINE}}", json_data.get("hero_headline", ""))
     final_html = final_html.replace("{{HERO_SUB}}", json_data.get("hero_subheadline", ""))
@@ -341,7 +333,7 @@ if start_btn:
 if 'final_page' in st.session_state:
     tab1, tab2 = st.tabs(["📱 المعاينة (نصوص + صور)", "💻 كود HTML للنسخ"])
     with tab1:
-        st.info("💡 يتم الآن توليد وجلب الصور الحية من الذكاء الاصطناعي بناءً على وصف منتجك. انتظر قليلاً لتكتمل وتظهر بالكامل.")
+        st.info("💡 بفضل تقنية الذاكرة المخبأة، الصور ستظهر الآن بشكل شبه فوري وبدون أخطاء.")
         components.html(st.session_state.final_page, height=1200, scrolling=True)
     with tab2:
         st.code(st.session_state.final_page, language="html")
