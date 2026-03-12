@@ -510,21 +510,43 @@ if app_mode == "🏗️ منشئ صفحات الهبوط":
 # ==========================================================
 elif app_mode == "💰 حاسبة التعادل المالي (Matrix)":
     st.subheader("💰 حاسبة نقطة التعادل والمصفوفة المالية (Break-Even Matrix)")
-    st.write("هذه الأداة تغنيك عن ملفات الإكسل المعقدة. أدخل أرقامك لتعرف أقصى تكلفة يمكنك دفعها للإعلان دون التعرض لخسارة.")
+    st.write("هذه الأداة تغنيك عن ملفات الإكسل المعقدة. اختر الدولة وأدخل أرقامك لتعرف أقصى تكلفة يمكنك دفعها للإعلان.")
     
     st.markdown("---")
     
+    # قاموس الدول والعملات والأسعار الافتراضية
+    COUNTRIES = {
+        "السعودية (KSA)": {"currency": "SAR", "P": 199.0, "C": 85.0, "CPL": 25.0},
+        "الإمارات (UAE)": {"currency": "AED", "P": 149.0, "C": 60.0, "CPL": 30.0},
+        "الكويت (KWT)": {"currency": "KWD", "P": 19.0, "C": 8.0, "CPL": 2.5},
+        "سلطنة عمان (OMN)": {"currency": "OMR", "P": 19.0, "C": 8.0, "CPL": 3.0},
+        "قطر (QAT)": {"currency": "QAR", "P": 199.0, "C": 80.0, "CPL": 35.0},
+        "البحرين (BHD)": {"currency": "BHD", "P": 19.0, "C": 8.0, "CPL": 3.0},
+        "المغرب (MAD)": {"currency": "MAD", "P": 299.0, "C": 120.0, "CPL": 40.0},
+        "مصر (EGP)": {"currency": "EGP", "P": 500.0, "C": 200.0, "CPL": 50.0},
+        "أخرى (Custom)": {"currency": "USD", "P": 50.0, "C": 20.0, "CPL": 5.0},
+    }
+
+    col_country, col_currency = st.columns(2)
+    with col_country:
+        selected_country = st.selectbox("🌍 اختر الدولة المستهدفة:", list(COUNTRIES.keys()))
+    with col_currency:
+        currency = st.text_input("💱 العملة:", value=COUNTRIES[selected_country]["currency"])
+
+    default_vals = COUNTRIES[selected_country]
+
     # 1. إدخال البيانات المالية
+    st.markdown("##### 💵 الأرقام الأساسية")
     col1, col2, col3 = st.columns(3)
-    P = col1.number_input("سعر بيع المنتج للعميل (P)", value=200.0, step=10.0)
-    C = col2.number_input("تكلفة المنتج + التوصيل (C)", value=80.0, step=5.0)
-    actual_cpl = col3.number_input("تكلفة الليد الحالية في مدير الإعلانات (CPL)", value=20.0, step=1.0)
+    P = col1.number_input(f"سعر بيع المنتج للعميل (P) [{currency}]", value=default_vals["P"], step=1.0)
+    C = col2.number_input(f"تكلفة المنتج + الشحن (C) [{currency}]", value=default_vals["C"], step=1.0)
+    actual_cpl = col3.number_input(f"تكلفة الليد الحالية (CPL) [{currency}]", value=default_vals["CPL"], step=0.5)
 
     # 2. إدخال نسب الأداء
-    st.write("<br>", unsafe_allow_html=True)
+    st.markdown("##### 📈 معدلات الأداء المتوقعة")
     col4, col5 = st.columns(2)
-    CR_percent = col4.slider("نسبة التأكيد (Confirmation Rate - CR) %", min_value=10, max_value=100, value=60)
-    DR_percent = col5.slider("نسبة التسليم (Delivery Rate - DR) %", min_value=10, max_value=100, value=55)
+    CR_percent = col4.slider("نسبة التأكيد (Confirmation Rate) %", min_value=10, max_value=100, value=60)
+    DR_percent = col5.slider("نسبة التسليم (Delivery Rate) %", min_value=10, max_value=100, value=55)
     
     CR = CR_percent / 100.0
     DR = DR_percent / 100.0
@@ -539,19 +561,19 @@ elif app_mode == "💰 حاسبة التعادل المالي (Matrix)":
     st.markdown("---")
     st.markdown("### 📊 المؤشرات الحيوية (KPIs)")
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("هامش الربح الإجمالي", f"{gross_margin:.2f}")
-    m2.metric("أقصى تكلفة لليد (Max CPL)", f"{max_cpl:.2f}")
-    m3.metric("أقصى تكلفة للمبيعة (Max CPA)", f"{max_cpa:.2f}")
+    m1.metric(f"هامش الربح ({currency})", f"{gross_margin:.2f}")
+    m2.metric(f"أقصى تكلفة لليد Max CPL", f"{max_cpl:.2f} {currency}")
+    m3.metric(f"أقصى تكلفة للمبيعة Max CPA", f"{max_cpa:.2f} {currency}")
 
     if profit_per_lead >= 0:
-        m4.metric("حالة إعلانك الحالي", "✅ رابح", f"+ {profit_per_lead:.2f} ربح صافي لكل ليد")
+        m4.metric("حالة إعلانك الحالي", "✅ رابح", f"+ {profit_per_lead:.2f} {currency} ربح لكل ليد")
     else:
-        m4.metric("حالة إعلانك الحالي", "🚨 خاسر", f"{profit_per_lead:.2f} خسارة في كل ليد")
+        m4.metric("حالة إعلانك الحالي", "🚨 خاسر", f"{profit_per_lead:.2f} {currency} خسارة لكل ليد")
 
     # 5. مصفوفة الحساسية (Max CPL Matrix)
     st.markdown("---")
     st.markdown("### 🧮 مصفوفة الحساسية (Max CPL Matrix)")
-    st.info("الجدول أدناه يوضح لك أقصى سعر ليد (Max CPL) يمكنك دفعه بناءً على تغير نسب التأكيد والتسليم. **(الأعمدة: التسليم DR، الصفوف: التأكيد CR)**")
+    st.info("الجدول أدناه يوضح لك **أقصى سعر ليد (Max CPL)** يمكنك دفعه للإعلانات بناءً على تغير نسب التأكيد والتسليم. \n\n**(الأعمدة: التسليم DR، الصفوف: التأكيد CR)**")
 
     # بناء المصفوفة
     dr_list = [x/100.0 for x in range(30, 100, 5)]
@@ -566,9 +588,11 @@ elif app_mode == "💰 حاسبة التعادل المالي (Matrix)":
 
     df_matrix = pd.DataFrame(matrix_data)
     
-    # عرض الجدول ملوناً تلقائياً
-    st.dataframe(
-        df_matrix.style.background_gradient(cmap='RdYlGn', subset=df_matrix.columns[1:]),
-        use_container_width=True,
-        hide_index=True
-    )
+    # عرض الجدول بشكل آمن لمنع الأخطاء البرمجية
+    try:
+        # تلوين الجدول (أخضر للأرقام العالية وأحمر للمنخفضة)
+        styled_df = df_matrix.style.background_gradient(cmap='RdYlGn', subset=df_matrix.columns[1:])
+        st.dataframe(styled_df, use_container_width=True)
+    except Exception as e:
+        # Fallback in case of styling error (e.g., gross margin is 0)
+        st.dataframe(df_matrix, use_container_width=True)
