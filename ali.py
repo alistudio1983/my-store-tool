@@ -4,6 +4,7 @@ import json
 import streamlit.components.v1 as components
 import re
 import urllib.parse
+import random
 
 # --- إعدادات الصفحة ---
 st.set_page_config(page_title="ALI Engine - 1-Click Magic", layout="wide", page_icon="⚡")
@@ -16,7 +17,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="main-header"><h1>⚡ ALI Growth Engine (بضغطة زر)</h1><p style="color:#94a3b8; margin:0;">صفحات هبوط كاملة (نصوص + صور ذكية) ببرومت واحد فقط</p></div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header"><h1>⚡ ALI Growth Engine (بضغطة زر)</h1><p style="color:#94a3b8; margin:0;">صفحات هبوط كاملة (نصوص + صور ذكية حية) ببرومت واحد فقط</p></div>', unsafe_allow_html=True)
 
 # ==========================================================
 # 🧱 الخطوة 2: القالب الشامل (1-Click Template)
@@ -44,6 +45,9 @@ MASTER_TEMPLATE = """
         .text-accent { color: var(--accent); }
         section { position: relative; padding: 3rem 1.5rem; }
         .no-pad { padding: 0 !important; }
+        /* تصميم يحمي شكل الصفحة في حال تأخرت الصورة في التحميل */
+        .img-fallback { background-color: #f3f4f6; display: block; position: relative; }
+        .img-fallback::before { content: 'جاري توليد الصورة... ⏳'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #9ca3af; font-weight: bold; font-size: 0.8rem; z-index: -1;}
     </style>
 </head>
 <body class="text-gray-800 antialiased pb-24 flex justify-center">
@@ -56,7 +60,7 @@ MASTER_TEMPLATE = """
 
         <!-- Hero Section -->
         <section class="no-pad relative w-full bg-gray-900">
-            <img src="https://image.pollinations.ai/prompt/{{IMAGE_HERO}}?width=800&height=1000&nologo=true" class="w-full h-[500px] object-cover opacity-90">
+            <img src="https://image.pollinations.ai/prompt/{{IMAGE_HERO}}?width=800&height=1000&nologo=true&seed={{SEED}}" class="w-full h-[500px] object-cover opacity-90 img-fallback" alt="Hero Image">
             <div class="absolute bottom-0 left-0 w-full h-3/4 bg-gradient-to-t from-[var(--primary)] to-transparent"></div>
             <div class="absolute bottom-0 left-0 w-full p-6 text-white text-center z-10">
                 <div class="inline-block bg-accent text-white px-4 py-1 rounded-full text-xs font-black mb-4 shadow-lg animate-pulse">عرض حصري</div>
@@ -67,21 +71,21 @@ MASTER_TEMPLATE = """
         </section>
 
         <!-- Problem Section -->
-        <section class="bg-white text-center">
+        <section class="bg-white text-center border-b border-gray-100">
             <h2 class="text-2xl font-black mb-5 text-red-600">⚠️ {{PROBLEM_TITLE}}</h2>
-            <img src="https://image.pollinations.ai/prompt/{{IMAGE_PROBLEM}}?width=600&height=400&nologo=true" class="w-full h-56 object-cover rounded-2xl shadow-md mb-5">
+            <img src="https://image.pollinations.ai/prompt/{{IMAGE_PROBLEM}}?width=600&height=400&nologo=true&seed={{SEED}}" class="w-full h-56 object-cover rounded-2xl shadow-md mb-5 img-fallback" alt="Problem Image">
             <p class="text-lg font-bold text-gray-700 leading-relaxed">{{PROBLEM_DESC}}</p>
         </section>
 
         <!-- Solution Section -->
-        <section class="bg-primary text-white text-center rounded-3xl shadow-lg relative z-20 mx-2">
+        <section class="bg-primary text-white text-center rounded-3xl shadow-xl relative z-20 mx-2 -mt-4 mb-4">
             <h2 class="text-3xl font-black text-accent mb-4 drop-shadow-sm">✨ {{SOLUTION_TITLE}}</h2>
             <p class="text-lg font-bold mb-6 text-gray-100">{{SOLUTION_DESC}}</p>
-            <img src="https://image.pollinations.ai/prompt/{{IMAGE_SOLUTION}}?width=800&height=600&nologo=true" class="w-full h-64 object-cover rounded-2xl shadow-xl border-4 border-white">
+            <img src="https://image.pollinations.ai/prompt/{{IMAGE_SOLUTION}}?width=800&height=600&nologo=true&seed={{SEED}}" class="w-full h-64 object-cover rounded-2xl shadow-xl border-4 border-white img-fallback" alt="Solution Image">
         </section>
 
         <!-- Benefits & Features -->
-        <section class="bg-secondary mt-4">
+        <section class="bg-secondary">
             <h2 class="text-3xl font-black text-center text-gray-900 mb-8 drop-shadow-sm">لماذا نحن الخيار الأفضل؟</h2>
             <div class="grid grid-cols-1 gap-4 mb-8">
                 {{BENEFITS_HTML}}
@@ -158,7 +162,6 @@ def generate_landing_page_json(api_key, product, category):
     model_name = get_fast_working_model(api_key)
     model = genai.GenerativeModel(model_name)
     
-    # برومت ذكي يجمع بين التسويق وتوليد الصور
     prompt = f"""
     أنت أعظم خبير تسويق لصفحات الهبوط (Infographic Sales Pages).
     المنتج: "{product}". 
@@ -206,11 +209,20 @@ def generate_landing_page_json(api_key, product, category):
 # ==========================================================
 # 💉 الخطوة 3: محرك الحقن (تجميع الصفحة)
 # ==========================================================
+
 def safe_quote(text):
-    return urllib.parse.quote(str(text).replace('\n', ' ').strip())
+    # ⚠️ فلتر حديدي: يزيل أي حرف عربي أو رمز غير مسموح به لضمان عدم انكسار الرابط
+    clean_text = re.sub(r'[^a-zA-Z0-9\s,.-]', '', str(text))
+    # إذا كان النص فارغاً بعد التنظيف (في حال أخطأ الذكاء واقتصر على العربية)، نضع وصفاً افتراضياً
+    if not clean_text.strip():
+        clean_text = "beautiful product photography high quality"
+    return urllib.parse.quote(clean_text.strip())
 
 def inject_data_into_template(json_data, category, colors):
     final_html = MASTER_TEMPLATE
+    
+    # بصمة عشوائية لتجديد الصور في كل مرة
+    current_seed = str(random.randint(1000, 99999))
     
     # 1. الفوائد
     benefits_html = ""
@@ -234,7 +246,7 @@ def inject_data_into_template(json_data, category, colors):
         img_prompt = safe_quote(item.get('image_prompt', f"macro photography of {title}"))
         dynamic_html += f'''
         <div class="bg-gray-50 p-4 rounded-2xl border border-gray-200 flex items-center gap-4 text-right shadow-sm">
-            <img src="https://image.pollinations.ai/prompt/{img_prompt}?width=200&height=200&nologo=true" class="w-20 h-20 rounded-full shadow-md border-2 border-accent object-cover flex-shrink-0">
+            <img src="https://image.pollinations.ai/prompt/{img_prompt}?width=200&height=200&nologo=true&seed={current_seed}" class="w-20 h-20 rounded-full shadow-md border-2 border-accent object-cover flex-shrink-0 img-fallback" alt="Feature Image">
             <div>
                 <h4 class="font-black text-primary text-lg mb-1">{title}</h4>
                 <p class="text-sm font-medium text-gray-600">{desc}</p>
@@ -277,6 +289,9 @@ def inject_data_into_template(json_data, category, colors):
     final_html = final_html.replace("{{IMAGE_PROBLEM}}", safe_quote(json_data.get("image_problem_prompt", "problem frustration")))
     final_html = final_html.replace("{{IMAGE_SOLUTION}}", safe_quote(json_data.get("image_solution_prompt", "solution happiness")))
     
+    # حقن البصمة العشوائية لمنع الذاكرة المؤقتة للصور المكسورة
+    final_html = final_html.replace("{{SEED}}", current_seed)
+
     final_html = final_html.replace("{{HERO_HEADLINE}}", json_data.get("hero_headline", ""))
     final_html = final_html.replace("{{HERO_SUB}}", json_data.get("hero_subheadline", ""))
     final_html = final_html.replace("{{PROBLEM_TITLE}}", json_data.get("problem_title", ""))
@@ -294,7 +309,7 @@ def inject_data_into_template(json_data, category, colors):
 with st.sidebar:
     st.header("⚙️ إعدادات بضغطة زر")
     api_key = st.text_input("🔑 Gemini API Key", type="password")
-    product_name = st.text_area("📦 تفاصيل المنتج", placeholder="اكتب اسم المنتج ووصف بسيط له هنا... \nمثال: شامبو بخلاصة الصبار لعلاج تساقط الشعر.")
+    product_name = st.text_area("📦 تفاصيل المنتج", placeholder="اكتب اسم المنتج ووصف بسيط له هنا... \nمثال: جهاز تنظيف الوجه الحديث مع فرشتين.")
     
     product_category = st.selectbox("📦 الفئة", ["💄 مستحضرات تجميل وعناية (Cosmetics)", "⚙️ أدوات وأجهزة ذكية (Gadgets)"])
 
@@ -326,7 +341,7 @@ if start_btn:
 if 'final_page' in st.session_state:
     tab1, tab2 = st.tabs(["📱 المعاينة (نصوص + صور)", "💻 كود HTML للنسخ"])
     with tab1:
-        st.info("💡 يتم الآن توليد وجلب الصور الحية من الذكاء الاصطناعي بناءً على وصف منتجك. انتظر قليلاً لتكتمل.")
+        st.info("💡 يتم الآن توليد وجلب الصور الحية من الذكاء الاصطناعي بناءً على وصف منتجك. انتظر قليلاً لتكتمل وتظهر بالكامل.")
         components.html(st.session_state.final_page, height=1200, scrolling=True)
     with tab2:
         st.code(st.session_state.final_page, language="html")
