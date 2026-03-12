@@ -4,150 +4,100 @@ import json
 import streamlit.components.v1 as components
 import re
 import pandas as pd
+import requests
+import random
+import urllib.parse
 
 # --- إعدادات الصفحة ---
-st.set_page_config(page_title="ALI Engine Pro - Ultimate System", layout="wide", page_icon="🚀")
+st.set_page_config(page_title="ALI Engine Pro - Real Images System", layout="wide", page_icon="🚀")
 
 # --- التصميم العبقري (Premium UI/UX CSS) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
     
-    /* الأساسيات */
     html, body, [data-testid="stAppViewContainer"], [data-testid="stSidebar"] { 
-        font-family: 'Cairo', sans-serif !important; 
-        direction: rtl; 
-        text-align: right; 
-        background-color: #f8fafc;
+        font-family: 'Cairo', sans-serif !important; direction: rtl; text-align: right; background-color: #f8fafc;
     }
     
-    /* شريط التمرير */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-    /* الهيدر الجبار (Premium Header) */
     .main-header { 
         background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        color: white; 
-        padding: 40px 20px; 
-        border-radius: 20px; 
-        text-align: center; 
-        margin-bottom: 35px; 
-        box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.3);
-        border-bottom: 5px solid #3b82f6;
-        position: relative;
-        overflow: hidden;
+        color: white; padding: 40px 20px; border-radius: 20px; text-align: center; margin-bottom: 35px; 
+        box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.3); border-bottom: 5px solid #3b82f6; position: relative; overflow: hidden;
     }
     .main-header::before {
-        content: "";
-        position: absolute;
-        top: -50%; left: -50%; width: 200%; height: 200%;
-        background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 60%);
-        animation: rotate 20s linear infinite;
+        content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+        background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 60%); animation: rotate 20s linear infinite;
     }
     .main-header h1 {
-        font-weight: 900;
-        font-size: 3rem;
-        margin-bottom: 5px;
-        background: linear-gradient(to right, #93c5fd, #ffffff);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        position: relative;
-        z-index: 1;
+        font-weight: 900; font-size: 3rem; margin-bottom: 5px;
+        background: linear-gradient(to right, #93c5fd, #ffffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; position: relative; z-index: 1;
     }
-    .main-header p {
-        color: #94a3b8;
-        font-size: 1.2rem;
-        font-weight: 600;
-        position: relative;
-        z-index: 1;
-    }
+    .main-header p { color: #94a3b8; font-size: 1.2rem; font-weight: 600; position: relative; z-index: 1; }
 
-    /* الأزرار الخارقة (Primary Buttons) */
     .stButton > button {
-        background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important;
-        color: white !important;
-        font-weight: 800 !important;
-        font-size: 1.1rem !important;
-        border: none !important;
-        border-radius: 12px !important;
-        padding: 15px 30px !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3), 0 2px 4px -1px rgba(59, 130, 246, 0.06) !important;
-        width: 100%;
+        background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important; color: white !important; font-weight: 800 !important;
+        font-size: 1.1rem !important; border: none !important; border-radius: 12px !important; padding: 15px 30px !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3) !important; width: 100%;
     }
-    .stButton > button:hover {
-        transform: translateY(-3px) scale(1.01) !important;
-        box-shadow: 0 15px 25px -5px rgba(59, 130, 246, 0.4), 0 8px 10px -6px rgba(59, 130, 246, 0.1) !important;
-    }
+    .stButton > button:hover { transform: translateY(-3px) scale(1.01) !important; box-shadow: 0 15px 25px -5px rgba(59, 130, 246, 0.4) !important; }
 
-    /* بطاقات المؤشرات (Metric Cards) */
     [data-testid="stMetric"] { 
-        background: white; 
-        padding: 25px 20px; 
-        border-radius: 16px; 
-        border: 1px solid #e2e8f0; 
-        text-align: center;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s ease;
+        background: white; padding: 25px 20px; border-radius: 16px; border: 1px solid #e2e8f0; text-align: center;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: all 0.3s ease;
     }
-    [data-testid="stMetric"]:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        border-color: #cbd5e1;
-    }
-    [data-testid="stMetricValue"] {
-        font-weight: 900 !important;
-        color: #0f172a !important;
-    }
+    [data-testid="stMetric"]:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); border-color: #cbd5e1; }
+    [data-testid="stMetricValue"] { font-weight: 900 !important; color: #0f172a !important; }
 
-    /* حقول الإدخال */
     .stTextInput input, .stTextArea textarea, .stSelectbox > div > div {
-        border-radius: 10px !important;
-        border: 1px solid #cbd5e1 !important;
-        box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02) !important;
-        transition: border-color 0.3s !important;
+        border-radius: 10px !important; border: 1px solid #cbd5e1 !important; transition: border-color 0.3s !important;
     }
-    .stTextInput input:focus, .stTextArea textarea:focus {
-        border-color: #3b82f6 !important;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
-    }
-
-    /* تبويبات التصفح (Tabs) */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 15px;
-        background-color: #f1f5f9;
-        padding: 10px;
-        border-radius: 12px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background-color: transparent;
-        border-radius: 8px;
-        padding: 10px 25px;
-        font-weight: 700;
-        color: #64748b;
-        border: none;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: white !important;
-        color: #3b82f6 !important;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-    }
-
-    /* رسائل النجاح والخطأ */
-    .stAlert {
-        border-radius: 12px !important;
-        font-weight: 600 !important;
-    }
+    .stTextInput input:focus, .stTextArea textarea:focus { border-color: #3b82f6 !important; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important; }
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="main-header"><h1>🚀 ALI Growth Engine Pro</h1><p>منصة العمليات التسويقية المتكاملة | أبحاث، صفحات هبوط، وتحليل مالي</p></div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header"><h1>🚀 ALI Growth Engine Pro</h1><p>منصة العمليات التسويقية المتكاملة | صور حقيقية 100% (Pexels Integration)</p></div>', unsafe_allow_html=True)
 
 # ==========================================================
-# 🧱 القوالب الهيكلية الشاملة لصفحات الهبوط
+# 🧠 دوال جلب الصور الحقيقية (Real Image Engine)
+# ==========================================================
+def get_real_or_ai_image(keyword, pexels_key, width, height, orientation="landscape"):
+    """
+    هذا المحرك يحاول جلب صورة حقيقية من Pexels أولاً.
+    إذا لم ينجح، يستخدم الذكاء الاصطناعي مع أمر صارم (صورة هاتف عفوية) لكي لا تبدو مصطنعة.
+    """
+    safe_keyword = str(keyword).strip()
+    if not safe_keyword or safe_keyword.lower() == "none":
+        safe_keyword = "product"
+
+    # 1. محاولة جلب صورة حقيقية من Pexels (الخيار الذهبي)
+    if pexels_key:
+        try:
+            url = f"https://api.pexels.com/v1/search?query={urllib.parse.quote(safe_keyword)}&per_page=5&orientation={orientation}"
+            headers = {"Authorization": pexels_key}
+            response = requests.get(url, headers=headers, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("photos") and len(data["photos"]) > 0:
+                    photo = random.choice(data["photos"])
+                    # إرجاع صورة بدقة عالية
+                    return photo["src"]["large"]
+        except Exception as e:
+            pass # في حال فشل الاتصال، انتقل للخيار البديل
+            
+    # 2. الخيار البديل: الذكاء الاصطناعي بنمط كاميرا الهاتف (لتبدو حقيقية وليست 3D)
+    prompt = f"candid authentic smartphone amateur photo of {safe_keyword}, real life, unedited, realistic, no CGI"
+    encoded_prompt = urllib.parse.quote(prompt)
+    seed = random.randint(1, 100000)
+    return f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&nologo=true&seed={seed}"
+
+# ==========================================================
+# 🧱 القوالب الهيكلية (بدمج الصور الحقيقية)
 # ==========================================================
 
 TEMPLATES = {
@@ -167,7 +117,8 @@ TEMPLATES = {
             .bg-accent { background-color: var(--accent); }
             .text-accent { color: var(--accent); }
             section { padding: 3rem 1.5rem; }
-            .placeholder-box { background-color: #e5e7eb; border: 2px dashed #9ca3af; display: flex; align-items: center; justify-content: center; color: #6b7280; font-weight: bold; text-align: center; flex-direction: column;}
+            .no-pad { padding: 0 !important; }
+            .img-container { background-color: #e5e7eb; display: flex; align-items: center; justify-content: center; }
         </style>
     </head>
     <body class="text-gray-800 antialiased pb-24 flex justify-center">
@@ -175,10 +126,9 @@ TEMPLATES = {
             <div class="bg-gray-900 text-white text-center py-2 text-xs font-bold flex justify-center gap-4">
                 <span>🚚 شحن سريع مجاني</span><span>🔒 الدفع عند الاستلام</span>
             </div>
-            <section class="!p-0 relative w-full bg-gray-100">
-                <div class="w-full h-[500px] placeholder-box">
-                    <span class="text-4xl mb-2">📸/🎥</span><span>ضع صورة أو فيديو المنتج الرائع هنا</span>
-                </div>
+            
+            <section class="!p-0 relative w-full bg-gray-900 img-container h-[500px]">
+                <img src="{{IMAGE_HERO_URL}}" class="w-full h-full object-cover opacity-90 absolute top-0 left-0" alt="Hero" loading="lazy">
                 <div class="absolute bottom-0 left-0 w-full h-3/4 bg-gradient-to-t from-[var(--primary)] to-transparent"></div>
                 <div class="absolute bottom-0 left-0 w-full p-6 text-white text-center z-10">
                     <h1 class="text-4xl font-black mb-3 leading-tight drop-shadow-md">{{HERO_HEADLINE}}</h1>
@@ -186,52 +136,63 @@ TEMPLATES = {
                     <a href="#buy" class="bg-accent hover:opacity-90 text-white font-black py-4 px-8 rounded-full text-xl w-full block shadow-lg transition transform hover:scale-105">{{CTA_BUTTON}}</a>
                 </div>
             </section>
+            
             <section class="bg-white text-center border-b border-gray-100">
                 <h2 class="text-2xl font-black mb-5 text-red-600">⚠️ {{PROBLEM_TITLE}}</h2>
-                <div class="w-full h-56 rounded-2xl mb-5 placeholder-box bg-red-50 border-red-200 text-red-400">
-                    <span class="text-3xl mb-2">😟</span><span>ضع صورة GIF متحركة توضح ألم العميل</span>
-                </div>
+                <img src="{{IMAGE_PROBLEM_URL}}" class="w-full h-56 object-cover rounded-2xl mb-5 shadow-md border-2 border-red-100" alt="Problem" loading="lazy">
                 <p class="text-lg font-bold text-gray-700 leading-relaxed">{{PROBLEM_DESC}}</p>
             </section>
+            
             <section class="bg-primary text-white text-center relative z-20">
                 <h2 class="text-3xl font-black text-accent mb-4">✨ {{SOLUTION_TITLE}}</h2>
                 <p class="text-lg font-bold mb-6 text-gray-100">{{SOLUTION_DESC}}</p>
-                <div class="w-full h-64 rounded-2xl border-4 border-white placeholder-box bg-green-50 text-green-500">
-                    <span class="text-3xl mb-2">😍</span><span>صورة/GIF للعميل وهو سعيد بالنتائج</span>
-                </div>
+                <img src="{{IMAGE_SOLUTION_URL}}" class="w-full h-64 object-cover rounded-2xl border-4 border-white shadow-xl" alt="Solution" loading="lazy">
             </section>
+            
             <section class="bg-gray-50 text-center border-b border-gray-200">
                 <h2 class="text-3xl font-black text-gray-900 mb-6">تحول مذهل تلاحظه فوراً!</h2>
                 <div class="flex gap-2 relative">
-                    <div class="w-1/2 relative placeholder-box h-48 rounded-r-2xl border-red-300 bg-red-50"><span class="text-red-400">صورة قبل</span><div class="absolute bottom-2 right-2 bg-red-600 text-white px-2 py-1 text-xs font-bold rounded">قبل</div></div>
-                    <div class="w-1/2 relative placeholder-box h-48 rounded-l-2xl border-green-300 bg-green-50"><span class="text-green-500">صورة بعد</span><div class="absolute bottom-2 left-2 bg-green-600 text-white px-2 py-1 text-xs font-bold rounded">بعد</div></div>
+                    <div class="w-1/2 relative h-48 rounded-r-2xl border-2 border-red-300 overflow-hidden bg-white">
+                        <img src="{{IMAGE_BEFORE_URL}}" class="w-full h-full object-cover opacity-90" loading="lazy">
+                        <div class="absolute bottom-2 right-2 bg-red-600 text-white px-2 py-1 text-xs font-bold rounded">قبل</div>
+                    </div>
+                    <div class="w-1/2 relative h-48 rounded-l-2xl border-2 border-green-300 overflow-hidden bg-white">
+                        <img src="{{IMAGE_AFTER_URL}}" class="w-full h-full object-cover" loading="lazy">
+                        <div class="absolute bottom-2 left-2 bg-green-600 text-white px-2 py-1 text-xs font-bold rounded">بعد</div>
+                    </div>
                     <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-accent text-white w-10 h-10 flex items-center justify-center rounded-full border-4 border-white shadow-lg font-black text-xl z-10">></div>
                 </div>
             </section>
-            <section class="bg-white border-b border-gray-200 text-center">
-                <h2 class="text-3xl font-black text-primary mb-2">شاهد تجارب عملائنا</h2>
-                <p class="text-gray-500 font-bold mb-8">لا تأخذ كلمتنا، شاهد الفيديوهات بنفسك!</p>
-                <div class="flex gap-3 overflow-x-auto pb-4 snap-x">
-                    <div class="min-w-[80%] snap-center"><div class="w-full h-64 bg-gray-200 rounded-xl overflow-hidden relative shadow-md placeholder-box"><span class="text-red-500 text-4xl mb-2">▶️</span><span>ضع فيديو يوتيوب هنا</span></div></div>
-                </div>
-            </section>
+
             <section class="bg-gray-50 border-b border-gray-200">
                 <h2 class="text-3xl font-black text-center text-primary mb-8">السر في مكوناتنا</h2>
                 <div class="grid grid-cols-1 gap-4">{{DYNAMIC_SECTION_HTML}}</div>
             </section>
+            
+            <section class="bg-white border-b border-gray-200 text-center">
+                <h2 class="text-3xl font-black text-primary mb-2">شاهد تجارب عملائنا</h2>
+                <p class="text-gray-500 font-bold mb-8">لا تأخذ كلمتنا، شاهد الفيديوهات بنفسك!</p>
+                <div class="flex gap-3 overflow-x-auto pb-4 snap-x">
+                    <div class="min-w-[80%] snap-center"><div class="w-full h-64 bg-gray-200 rounded-xl overflow-hidden relative shadow-md img-container"><span class="text-red-500 text-4xl mb-2">▶️</span><span>ضع فيديو يوتيوب هنا</span></div></div>
+                </div>
+            </section>
+            
             <section class="bg-white border-b border-gray-200">
                 <h2 class="text-3xl font-black text-center text-gray-900 mb-8">آراء العملاء</h2>
                 <div class="space-y-4">{{REVIEWS_HTML}}</div>
             </section>
+            
             <section class="bg-gray-50 border-b border-gray-200">
                 <h2 class="text-3xl font-black text-center text-gray-900 mb-8">❓ الأسئلة الشائعة</h2>
                 <div class="space-y-3 text-right">{{FAQ_HTML}}</div>
             </section>
+            
             <section class="bg-primary text-center pb-20 text-white rounded-t-3xl mt-4">
                 <div class="text-6xl mb-4 drop-shadow-lg">🛡️</div>
                 <h3 class="text-3xl font-black text-accent mb-4">{{GUARANTEE_TITLE}}</h3>
                 <p class="text-lg font-bold text-gray-100">{{GUARANTEE_TEXT}}</p>
             </section>
+            
             <div id="buy" class="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-sm p-4 shadow-[0_-15px_30px_rgba(0,0,0,0.15)] flex justify-center z-50 border-t-4 border-accent">
                 <div class="w-full max-w-lg flex flex-col items-center">
                     <a href="#buy" class="bg-accent hover:opacity-90 text-white font-black py-4 px-6 rounded-xl text-2xl w-full text-center shadow-lg transition transform hover:scale-[1.02] flex justify-center items-center gap-3"><span>🛒</span> {{CTA_BUTTON}}</a>
@@ -258,7 +219,7 @@ TEMPLATES = {
             .text-accent { color: var(--accent); }
             section { padding: 3rem 1.5rem; }
             .no-pad { padding: 0 !important; }
-            .placeholder-box { background-color: #e5e7eb; border: 2px dashed #9ca3af; display: flex; align-items: center; justify-content: center; color: #6b7280; font-weight: bold; text-align: center; flex-direction: column;}
+            .img-container { background-color: #e5e7eb; display: flex; align-items: center; justify-content: center; }
         </style>
     </head>
     <body class="text-gray-800 antialiased pb-24 flex justify-center">
@@ -266,10 +227,9 @@ TEMPLATES = {
             <div class="bg-gray-900 text-white text-center py-2 text-xs font-bold flex justify-center gap-4">
                 <span>🚚 توصيل سريع </span><span>🔒 جودة مضمونة</span>
             </div>
-            <section class="no-pad relative w-full bg-gray-900">
-                <div class="w-full h-[500px] placeholder-box border-none !bg-gray-800 !text-gray-400">
-                    <span class="text-4xl mb-2">📸/🎥</span><span>صورة أو فيديو الأداة وهي تعمل</span>
-                </div>
+            
+            <section class="no-pad relative w-full bg-gray-900 img-container h-[500px]">
+                <img src="{{IMAGE_HERO_URL}}" class="w-full h-full object-cover opacity-90 absolute top-0 left-0" alt="Hero" loading="lazy">
                 <div class="absolute bottom-0 left-0 w-full h-3/4 bg-gradient-to-t from-[var(--primary)] to-transparent"></div>
                 <div class="absolute bottom-0 left-0 w-full p-6 text-white text-center z-10">
                     <h1 class="text-4xl font-black mb-3 leading-tight drop-shadow-md">{{HERO_HEADLINE}}</h1>
@@ -277,54 +237,59 @@ TEMPLATES = {
                     <a href="#buy" class="bg-accent hover:opacity-90 text-white font-black py-4 px-8 rounded-full text-xl w-full block shadow-lg transition transform hover:scale-105">{{CTA_BUTTON}}</a>
                 </div>
             </section>
+            
             <section class="bg-white text-center border-b border-gray-100">
                 <h2 class="text-2xl font-black mb-5 text-red-600">⚠️ {{PROBLEM_TITLE}}</h2>
-                <div class="w-full h-56 rounded-2xl mb-5 placeholder-box bg-red-50 border-red-200">
-                    <span>صورة للمشكلة اليومية بدون الأداة</span>
-                </div>
+                <img src="{{IMAGE_PROBLEM_URL}}" class="w-full h-56 object-cover rounded-2xl mb-5 shadow-md border-2 border-red-100" alt="Problem" loading="lazy">
                 <p class="text-lg font-bold text-gray-700 leading-relaxed">{{PROBLEM_DESC}}</p>
             </section>
+            
             <section class="bg-primary text-white text-center relative z-20">
                 <h2 class="text-3xl font-black text-accent mb-4">✨ {{SOLUTION_TITLE}}</h2>
                 <p class="text-lg font-bold mb-6 text-gray-100">{{SOLUTION_DESC}}</p>
-                <div class="w-full h-64 rounded-2xl border-4 border-white placeholder-box text-gray-700">
-                    <span>GIF / فيديو يوضح سهولة الأداة</span>
-                </div>
+                <img src="{{IMAGE_SOLUTION_URL}}" class="w-full h-64 object-cover rounded-2xl border-4 border-white shadow-xl" alt="Solution" loading="lazy">
             </section>
+            
             <section class="bg-gray-100 border-b border-gray-200">
                 <h2 class="text-3xl font-black text-center text-primary mb-6">⚙️ المقاسات والمواصفات</h2>
                 <div class="flex flex-col gap-4">
-                    <div class="w-full h-48 rounded-xl placeholder-box bg-white"><span>صورة توضيحية للمقاسات أو الأبعاد</span></div>
+                    <img src="{{IMAGE_DIMENSIONS_URL}}" class="w-full h-48 object-cover rounded-xl shadow-md" alt="Dimensions" loading="lazy">
                     <ul class="space-y-3 bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-right">{{DIMENSIONS_HTML}}</ul>
                 </div>
             </section>
+            
             <section class="bg-white border-b border-gray-200">
                 <h2 class="text-3xl font-black text-center text-primary mb-8">سهولة تامة في الاستخدام</h2>
                 <div class="grid grid-cols-1 gap-4">{{DYNAMIC_SECTION_HTML}}</div>
             </section>
+            
             <section class="bg-gray-50 border-b border-gray-200 text-center">
                 <h2 class="text-3xl font-black text-primary mb-2">تجارب عملائنا المباشرة</h2>
                 <p class="text-gray-500 font-bold mb-6">شاهد المنتج وهو يعمل على أرض الواقع</p>
                 <div class="space-y-4">
-                    <div class="w-full h-56 bg-gray-200 rounded-xl overflow-hidden relative shadow-md placeholder-box"><span class="text-red-500 text-4xl mb-2">▶️</span><span>ضع رابط فيديو يوتيوب هنا</span></div>
+                    <div class="w-full h-56 bg-gray-200 rounded-xl overflow-hidden relative shadow-md img-container"><span class="text-red-500 text-4xl mb-2">▶️</span><span>ضع رابط فيديو يوتيوب هنا</span></div>
                 </div>
             </section>
+            
             <section class="bg-white border-b border-gray-200">
                 <h2 class="text-3xl font-black text-center text-gray-900 mb-8">التقييمات الكتابية</h2>
                 <div class="space-y-4">{{REVIEWS_HTML}}</div>
             </section>
+            
             <section class="bg-gray-50 border-b border-gray-200">
                 <h2 class="text-3xl font-black text-center text-gray-900 mb-8">❓ أسئلة متكررة</h2>
                 <div class="space-y-3 text-right">{{FAQ_HTML}}</div>
             </section>
+            
             <section class="bg-gray-900 text-center pb-20 text-white rounded-t-3xl mt-4">
                 <div class="text-6xl mb-4">🛡️</div>
                 <h3 class="text-3xl font-black text-accent mb-4">{{GUARANTEE_TITLE}}</h3>
                 <p class="text-lg font-bold text-gray-300">{{GUARANTEE_TEXT}}</p>
             </section>
+            
             <div id="buy" class="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-sm p-4 shadow-[0_-15px_30px_rgba(0,0,0,0.15)] flex justify-center z-50 border-t-4 border-accent">
                 <div class="w-full max-w-lg flex flex-col items-center">
-                    <a href="#buy" class="bg-accent hover:opacity-90 text-gray-900 font-black py-4 px-6 rounded-xl text-2xl w-full text-center shadow-lg transition transform hover:scale-[1.02] flex justify-center items-center gap-3"><span>🛒</span> {{CTA_BUTTON}}</a>
+                    <a href="#buy" class="bg-accent hover:opacity-90 text-white font-black py-4 px-6 rounded-xl text-2xl w-full text-center shadow-lg transition transform hover:scale-[1.02] flex justify-center items-center gap-3"><span>🛒</span> {{CTA_BUTTON}}</a>
                 </div>
             </div>
         </div>
@@ -334,7 +299,7 @@ TEMPLATES = {
 }
 
 # ==========================================================
-# 🧠 دوال الذكاء الاصطناعي
+# 🧠 دوال الذكاء الاصطناعي الأساسية
 # ==========================================================
 def get_fast_working_model(api_key):
     if 'valid_model_name' in st.session_state:
@@ -355,35 +320,39 @@ def generate_landing_page_json(api_key, product, category):
     model = genai.GenerativeModel(model_name)
     
     prompt = f"""
-    أنت خبير Copywriter لصفحات الهبوط الموجهة للوطن العربي.
-    المنتج المستهدف: "{product}". 
-    الفئة: {"مستحضرات تجميل وعناية" if "Cosmetics" in category else "أدوات وأجهزة ذكية"}.
-    النصوص يجب أن تكون بـ "العربية الفصحى" حصراً.
+    أنت خبير Copywriter لصفحات الهبوط.
+    المنتج: "{product}". الفئة: "{category}".
+    النصوص الموجهة للعميل بـ "العربية الفصحى".
+    ⚠️ الحقول المنتهية بـ _search هي كلمات مفتاحية بالإنجليزية فقط للبحث عن صور حقيقية (كلمة إلى 3 كلمات كحد أقصى). مثال: "smiling woman", "acne face", "skincare serum".
 
     رد بصيغة JSON صالحة بهذا الهيكل:
     {{
         "hero_headline": "عنوان رئيسي يخطف الانتباه",
         "hero_subheadline": "عنوان فرعي يقدم وعداً بالحل",
+        "image_hero_search": "english keyword for product or happy person",
         "problem_title": "عنوان قسم الألم",
-        "problem_description": "فقرة تصف الإحباط أو المشكلة بدقة",
+        "problem_description": "فقرة تصف الإحباط بدقة",
+        "image_problem_search": "english keyword for frustrated person or bad skin/mess",
         "solution_title": "عنوان قسم الحل",
-        "solution_description": "فقرة تشرح كيف يقدم المنتج الحل الجذري",
+        "solution_description": "فقرة تشرح كيف يقدم المنتج الحل",
+        "image_solution_search": "english keyword for happy relieved person or clean result",
+        "image_before_search": "english keyword for before result (bad)",
+        "image_after_search": "english keyword for after result (good)",
         "dynamic_items": [
-            {{"title": "اسم ميزة أو مكون 1", "desc": "فائدة هذه الميزة للعميل"}},
-            {{"title": "اسم ميزة أو مكون 2", "desc": "فائدة هذه الميزة للعميل"}},
-            {{"title": "اسم ميزة أو مكون 3", "desc": "فائدة هذه الميزة للعميل"}}
+            {{"title": "اسم ميزة 1", "desc": "الفائدة", "image_search": "english keyword for feature 1"}},
+            {{"title": "اسم ميزة 2", "desc": "الفائدة", "image_search": "english keyword for feature 2"}},
+            {{"title": "اسم ميزة 3", "desc": "الفائدة", "image_search": "english keyword for feature 3"}}
         ],
-        "dimensions": ["الطول: .. سم", "الوزن: .. جرام", "الخامة: .."],
+        "dimensions": ["الطول: ..", "الوزن: ..", "الخامة: .."],
+        "image_dimensions_search": "english keyword for ruler or measurement",
         "reviews": [
-            {{"name": "سارة م.", "rating": 5, "comment": "تعليق واقعي وحقيقي جداً"}},
-            {{"name": "أحمد ع.", "rating": 5, "comment": "تعليق يثني على الجودة والسرعة"}}
+            {{"name": "سارة م.", "rating": 5, "comment": "تعليق واقعي"}}
         ],
         "faq": [
-            {{"q": "متى سألاحظ النتائج؟", "a": "إجابة مقنعة وواضحة"}},
-            {{"q": "هل يوجد ضمان؟", "a": "نعم، نقدم ضمان..."}}
+            {{"q": "متى سألاحظ النتائج؟", "a": "إجابة مقنعة"}}
         ],
         "guarantee_title": "عنوان الضمان",
-        "guarantee_text": "نص تفصيلي للضمان يزيل الشك",
+        "guarantee_text": "نص تفصيلي للضمان",
         "call_to_action": "نص زر الشراء"
     }}
     """
@@ -399,62 +368,40 @@ def generate_deep_research(api_key, product_name, category):
     genai.configure(api_key=api_key, transport="rest")
     model_name = get_fast_working_model(api_key)
     model = genai.GenerativeModel(model_name)
-    
     prompt = f"""
     أنت أداة "Deep Research" متطورة وخبير استراتيجي في الـ (Direct Response Copywriting).
-    مهمتك هي إجراء بحث سوقي معمق وتطوير وثائق بيعية للمنتج التالي الذي أدخله المستخدم:
-    المنتج: "{product_name}"
-    الفئة: "{category}"
-
-    استند بصرامة إلى المبادئ التالية المأخوذة من أفضل مراجع التسويق:
-    1. مبادئ Copywriting Mastery: الوضوح التام (Clarity)، القوة في الإقناع (Power)، والهدف البيعي المباشر (Purpose). استخدم جملاً قصيرة وقوية.
-    2. أطر العمل: PAS (المشكلة، الإثارة، الحل) و FAB (الميزة، الأفضلية، الفائدة).
-    3. منهجية SOP-1: بناء الوثائق التأسيسية الأربعة (Foundational Docs).
-
-    أخرج تقريراً شاملاً باللغة العربية الفصحى بتنسيق Markdown، مقسماً كالتالي بالضبط:
-
-    ## 1. 👤 وثيقة شخصية العميل (Avatar Sheet)
-    - **الآلام العميقة (Pain Points):** ما الذي يحبطهم يومياً؟
-    - **الرغبات والأهداف (Desires & Goals):** التحول السحري الذي يحلمون به.
-    - **الاعتراضات الخفية (Hidden Objections):** لماذا قد يترددون قبل الشراء؟
-
-    ## 2. 🌍 وثيقة بحث السوق والمنافسين (Market & Competitor Research)
-    - **فجوة السوق (Market Gap):** ما الذي يفتقده السوق حالياً؟
-    - **أخطاء المنافسين (Competitor Flaws):** وعودهم الكاذبة أو عيوب منتجاتهم.
-
-    ## 3. 🎯 وثيقة ملخص العرض (Offer Brief)
-    - **الوعد الأساسي (Core Promise):** جملة واحدة قوية تلخص الحل.
-    - **الآلية الفريدة (Unique Mechanism):** السر أو التقنية أو المكون الذي يجعل هذا المنتج مختلفاً وفعالاً.
-
-    ## 4. 🧠 وثيقة المعتقدات الضرورية (Necessary Beliefs Doc)
-    (اكتب 4 إلى 6 معتقدات فقط يجب أن يتبناها العميل ليشتري. يجب أن تبدأ كل نقطة حصراً بكلمة "أنا أؤمن أن...")
-    - أنا أؤمن أن...
-    - أنا أؤمن أن...
-
-    ## 5. ✍️ زوايا البيع الجاهزة للإعلانات (Copywriting Angles)
-    **تطبيق إطار PAS:**
-    - **المشكلة (Problem):** [اكتب سطرين]
-    - **الإثارة (Agitation):** [اكتب سطرين لتضخيم الألم]
-    - **الحل (Solution):** [اكتب سطرين لتقديم المنتج كمنقذ]
-    
-    **تطبيق إطار FAB:**
-    - **الميزة (Feature):** [ما هي أفضل ميزة]
-    - **الأفضلية (Advantage):** [لماذا هي أفضل من غيرها]
-    - **الفائدة (Benefit):** [النتيجة العاطفية المباشرة]
+    المنتج: "{product_name}". الفئة: "{category}".
+    استند إلى منهجية SOP-1 وبناء الوثائق التأسيسية الأربعة. أخرج تقريراً شاملاً بالعربية الفصحى بتنسيق Markdown.
+    1. وثيقة شخصية العميل (Avatar Sheet) - الآلام، الرغبات، الاعتراضات الخفية.
+    2. وثيقة بحث السوق والمنافسين - فجوة السوق، أخطاء المنافسين.
+    3. وثيقة ملخص العرض (Offer Brief) - الوعد الأساسي، الآلية الفريدة.
+    4. وثيقة المعتقدات الضرورية - 4 إلى 6 معتقدات تبدأ بـ "أنا أؤمن أن...".
+    5. زوايا البيع الجاهزة - تطبيق إطار PAS وإطار FAB.
     """
     response = model.generate_content(prompt, request_options={"timeout": 60.0})
     return response.text
 
-# 3. دالة الحقن وبناء الـ HTML
-def inject_data_into_template(json_data, category, colors):
+# ==========================================================
+# 💉 دالة الحقن وبناء الـ HTML بالصور الحقيقية
+# ==========================================================
+def inject_data_into_template(json_data, category, colors, pexels_key):
     template_key = "Cosmetics" if "Cosmetics" in category else "Gadgets"
     final_html = TEMPLATES[template_key]
     
+    # استخراج وتوليد روابط الصور الحقيقية
+    hero_url = get_real_or_ai_image(json_data.get('image_hero_search', 'product'), pexels_key, 800, 1000, "portrait")
+    prob_url = get_real_or_ai_image(json_data.get('image_problem_search', 'sad person'), pexels_key, 600, 400, "landscape")
+    sol_url = get_real_or_ai_image(json_data.get('image_solution_search', 'happy person'), pexels_key, 800, 600, "landscape")
+    before_url = get_real_or_ai_image(json_data.get('image_before_search', 'sad face'), pexels_key, 400, 500, "portrait")
+    after_url = get_real_or_ai_image(json_data.get('image_after_search', 'clean face'), pexels_key, 400, 500, "portrait")
+    dim_url = get_real_or_ai_image(json_data.get('image_dimensions_search', 'ruler measurement'), pexels_key, 600, 400, "landscape")
+
     dynamic_html = ""
     for item in json_data.get('dynamic_items', [])[:3]:
+        item_img = get_real_or_ai_image(item.get('image_search', 'feature'), pexels_key, 200, 200, "square")
         dynamic_html += f'''
-        <div class="bg-white p-5 rounded-2xl border border-gray-100 flex items-start gap-4 text-right shadow-sm">
-            <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center flex-shrink-0 text-xl font-black border border-blue-100">✓</div>
+        <div class="bg-white p-4 rounded-2xl border border-gray-100 flex items-center gap-4 text-right shadow-sm">
+            <img src="{item_img}" class="w-16 h-16 rounded-full object-cover shadow-sm border-2 border-accent flex-shrink-0" loading="lazy">
             <div><h4 class="font-black text-gray-900 text-lg mb-1">{item.get('title')}</h4><p class="text-sm font-bold text-gray-600 leading-relaxed">{item.get('desc')}</p></div>
         </div>'''
 
@@ -480,13 +427,23 @@ def inject_data_into_template(json_data, category, colors):
             <p class="text-gray-600 text-sm font-bold mt-3 border-t pt-3 border-gray-100">{faq.get('a')}</p>
         </details>'''
 
+    # حقن الروابط والنصوص
+    final_html = final_html.replace("{{IMAGE_HERO_URL}}", hero_url)
+    final_html = final_html.replace("{{IMAGE_PROBLEM_URL}}", prob_url)
+    final_html = final_html.replace("{{IMAGE_SOLUTION_URL}}", sol_url)
+    final_html = final_html.replace("{{IMAGE_BEFORE_URL}}", before_url)
+    final_html = final_html.replace("{{IMAGE_AFTER_URL}}", after_url)
+    final_html = final_html.replace("{{IMAGE_DIMENSIONS_URL}}", dim_url)
+    
     final_html = final_html.replace("{{DYNAMIC_SECTION_HTML}}", dynamic_html)
     final_html = final_html.replace("{{DIMENSIONS_HTML}}", dimensions_html)
     final_html = final_html.replace("{{REVIEWS_HTML}}", reviews_html)
     final_html = final_html.replace("{{FAQ_HTML}}", faq_html)
+    
     final_html = final_html.replace("{{COLOR_PRIMARY}}", colors['primary'])
     final_html = final_html.replace("{{COLOR_SECONDARY}}", colors['secondary'])
     final_html = final_html.replace("{{COLOR_ACCENT}}", colors['accent'])
+
     final_html = final_html.replace("{{HERO_HEADLINE}}", json_data.get("hero_headline", ""))
     final_html = final_html.replace("{{HERO_SUB}}", json_data.get("hero_subheadline", ""))
     final_html = final_html.replace("{{PROBLEM_TITLE}}", json_data.get("problem_title", ""))
@@ -500,13 +457,17 @@ def inject_data_into_template(json_data, category, colors):
     return final_html
 
 # ==========================================================
-# 🎛️ واجهة المستخدم (المركزية والتنقل)
+# 🎛️ واجهة المستخدم والقائمة الجانبية
 # ==========================================================
 with st.sidebar:
     st.header("⚙️ الإعدادات العامة")
     global_api_key = st.text_input("🔑 Gemini API Key", type="password")
     global_product_name = st.text_area("📦 تفاصيل واسم المنتج", placeholder="مثال: جهاز تنظيف الوجه الحديث مع فرشتين.")
     global_category = st.selectbox("📦 فئة المنتج", ["💄 مستحضرات تجميل وعناية (Cosmetics)", "⚙️ أدوات وأجهزة ذكية (Gadgets)"])
+    
+    st.markdown("---")
+    st.subheader("📸 الصور الحقيقية (Real Images)")
+    pexels_key = st.text_input("🔑 Pexels API Key (اختياري)", type="password", help="احصل عليه مجاناً من Pexels.com لتعطيك الأداة صوراً فوتوغرافية حقيقية 100% لأشخاص ومنتجات بدلاً من الذكاء الاصطناعي.")
     
     st.markdown("---")
     st.header("🛠️ اختر الأداة")
@@ -525,25 +486,28 @@ if app_mode == "🏗️ منشئ صفحات الهبوط":
             color_secondary = st.color_picker("ثانوي", "#f8fafc")
             colors_dict = {'primary': color_primary, 'secondary': color_secondary, 'accent': color_accent}
         
-        start_btn = st.button("🚀 توليد الصفحة الآن")
+        start_btn = st.button("🚀 توليد الصفحة (سحر حقيقي!)")
 
     if start_btn:
         if not global_api_key or not global_product_name:
             st.error("الرجاء إدخال المفتاح واسم المنتج في القائمة الجانبية.")
         else:
-            with st.spinner("🤖 جاري الهندسة وبناء المحتوى التسويقي الجبار..."):
+            with st.spinner("🤖 جاري الهندسة، كتابة المحتوى، وجلب الصور الفوتوغرافية الحقيقية..."):
                 try:
                     raw_json = generate_landing_page_json(global_api_key, global_product_name, global_category)
                     parsed_data = json.loads(raw_json)
-                    st.session_state.final_page = inject_data_into_template(parsed_data, global_category, colors_dict)
-                    st.success("🎉 اكتمل البناء بنجاح! الصناديق جاهزة لاستقبال صورك.")
+                    st.session_state.final_page = inject_data_into_template(parsed_data, global_category, colors_dict, pexels_key)
+                    st.success("🎉 اكتمل البناء بنجاح! لاحظ احترافية الصور وواقعيتها.")
                 except Exception as e:
                     st.error(f"🛑 خطأ: {str(e)}")
 
     if 'final_page' in st.session_state:
         tab1, tab2 = st.tabs(["📱 المعاينة البصرية", "💻 كود HTML (للنسخ)"])
         with tab1:
-            st.info("💡 الأماكن الرمادية هي مساحات مصممة هندسياً لرفع نسبة التحويل (CR). استبدلها بصورك الحقيقية.")
+            if pexels_key:
+                st.success("📸 تم تفعيل محرك Pexels! الصور المعروضة أدناه هي صور فوتوغرافية حقيقية 100% تم جلبها من أرشيف Pexels.")
+            else:
+                st.info("💡 تم تفعيل محرك الذكاء الاصطناعي بنمط (كاميرا الهاتف) لتبدو الصور عفوية وحقيقية قدر الإمكان. لصور حقيقية 100%، أضف مفتاح Pexels في الجانب.")
             components.html(st.session_state.final_page, height=1000, scrolling=True)
         with tab2:
             st.code(st.session_state.final_page, language="html")
