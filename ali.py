@@ -30,8 +30,8 @@ def get_ai_image(keyword, width=800, height=600, style="professional"):
     if not safe_keyword or safe_keyword.lower() == "none":
         safe_keyword = "product"
     prompts = {
-        "product": f"professional studio product photography of {safe_keyword}, white background, high resolution, commercial quality, 8k, sharp focus, soft lighting",
-        "person": f"professional portrait photo of {safe_keyword}, natural lighting, high quality, realistic, candid, authentic",
+        "product": f"{safe_keyword} product photo white background studio",
+        "person": f"{safe_keyword} portrait natural light realistic",
         "before_after": f"realistic before and after comparison photo of {safe_keyword}, high quality, clear difference, professional photography",
         "lifestyle": f"lifestyle photography of person using {safe_keyword}, natural setting, warm lighting, authentic, high quality, 8k",
         "ingredient": f"close up macro photography of {safe_keyword}, natural organic ingredient, studio lighting, white background, 8k, detailed texture",
@@ -42,7 +42,7 @@ def get_ai_image(keyword, width=800, height=600, style="professional"):
         "feature": f"detailed highlight of {safe_keyword}, clean modern aesthetic, studio lighting, detailed close up, commercial photography, 8k",
         "review": f"customer selfie with {safe_keyword}, casual setting, smartphone photo style, realistic, genuine smile, 8k",
     }
-    prompt = prompts.get(style, f"professional high quality photo of {safe_keyword}, 8k, sharp, realistic, commercial photography")
+    prompt = prompts.get(style, f"{safe_keyword} high quality realistic photo")
     encoded_prompt = urllib.parse.quote(prompt)
     seed = random.randint(1, 999999)
     return f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&nologo=true&seed={seed}"
