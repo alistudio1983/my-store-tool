@@ -50,20 +50,19 @@ def get_ai_image(keyword, width=800, height=600, style="professional"):
         if cache_key in st.session_state:
             return st.session_state[cache_key]
         try:
-            genai.configure(api_key=api_key, transport="rest")
-            model = genai.GenerativeModel("gemini-2.0-flash-exp")
-            resp = model.generate_content(
-                f"Generate a professional photo: {prompt}",
-                generation_config=genai.GenerationConfig(response_modalities=["IMAGE", "TEXT"]),
-                request_options={"timeout": 30.0}
-            )
-            for part in resp.candidates[0].content.parts:
-                if hasattr(part, 'inline_data') and part.inline_data:
-                    b64 = base64.b64encode(part.inline_data.data).decode('utf-8')
-                    data_uri = f"data:{part.inline_data.mime_type};base64,{b64}"
-                    st.session_state[cache_key] = data_uri
-                    time.sleep(7)
-                    return data_uri
+                        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={api_key}"
+            payload = {"contents": [{"parts": [{"text": f"Generate a professional photo: {prompt}"}]}], "generationConfig": {"response_modalities": ["IMAGE", "TEXT"]}}
+            r = requests.post(url, json=payload, timeout=30)
+            if r.status_code == 200:
+                data = r.json()
+                for part in data.get('candidates', [{}])[0].get('content', {}).get('parts', []):
+                    if 'inlineData' in part:
+                        mime = part['inlineData']['mimeType']
+                        b64 = part['inlineData']['data']
+                        data_uri = f"data:{mime};base64,{b64}"
+                        st.session_state[cache_key] = data_uri
+                        time.sleep(7)
+                        return data_uri
         except Exception:
             pass
     colors = ['#3b82f6','#8b5cf6','#06b6d4','#10b981','#f59e0b','#ef4444']
