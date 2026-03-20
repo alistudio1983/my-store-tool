@@ -392,7 +392,13 @@ if app_mode == "🏗️ منشئ صفحات الهبوط":
             with st.spinner("🤖 جاري بناء صفحة الهبوط بـ 15 قسم + صور AI عالية الجودة..."):
                 try:
                     raw_json = generate_landing_page_json(global_api_key, global_product_name, global_category)
-                    parsed_data = json.loads(raw_json)
+                    try:
+                        parsed_data = json.loads(raw_json)
+                    except json.JSONDecodeError:
+                        fixed = re.sub(r',\s*}', '}', raw_json)
+                        fixed = re.sub(r',\s*]', ']', fixed)
+                        fixed = re.sub(r'(["\d])\s*\n\s*"', r'\1,\n"', fixed)
+                        parsed_data = json.loads(fixed)
                     auto_colors = detect_colors(global_product_name, global_category)
                     st.session_state.final_page = build_landing_page_html(parsed_data, auto_colors)
                     st.success("🎉 اكتمل البناء! 15 قسم + صور AI + ألوان تلقائية")
