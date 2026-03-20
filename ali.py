@@ -366,7 +366,7 @@ img {{ max-width:100%; height:auto; display:block; }}
 
     return html
 
-    def get_youcan_html(html):
+def get_youcan_html(html):
     """Strip script tags for YouCan compatibility"""
     import re
     clean = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL)
