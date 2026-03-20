@@ -45,7 +45,7 @@ def get_ai_image(keyword, width=800, height=600, style="professional"):
     prompt = prompts.get(style, f"professional high quality photo of {safe_keyword}, 8k, sharp, realistic, commercial photography")
     encoded_prompt = urllib.parse.quote(prompt)
     seed = random.randint(1, 999999)
-    return f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&nologo=true&seed={seed}&model=turbo"
+    return f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&nologo=true&seed={seed}"
 
 AUTO_COLORS = {
     "cosmetics": {"primary": "#0f766e", "secondary": "#f0fdfa", "accent": "#eab308", "gradient1": "#0f766e", "gradient2": "#14b8a6"},
