@@ -484,7 +484,7 @@ def get_youcan_html(html):
         tag = tag.replace(f'class="{cls_m.group(1)}"', '')
         if inline:
             combined = '; '.join(inline)
-                        tag = tag.rstrip('>').rstrip('/').rstrip() + f' style="{combined}">'
+            tag = tag.rstrip('>').rstrip('/').rstrip() + f' style="{combined}">'
         return tag
     clean = re.sub(r'<[a-zA-Z][^>]*class="[^"]+"[^>]*/?>', replace_classes, clean)
     # 4. Fix data-src
