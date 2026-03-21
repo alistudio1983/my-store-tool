@@ -611,8 +611,7 @@ if app_mode == "\U0001f3d7\ufe0f \u0645\u0646\u0634\u0626 \u0635\u0641\u062d\u06
                 except Exception as e:
                     st.error(f"\U0001f6d1 \u062e\u0637\u0623: {str(e)}")
     if 'final_page' in st.session_state:
-        tab1, tab2, tab3, tab4, tab5 = st.tabs(["\U0001f4f1 \u0627\u0644\u0645\u0639\u0627\u064a\u0646\u0629 \u0627\u0644\u0628\u0635\u0631\u064a\u0629", "\U0001f916 \u062a\u0648\u0644\u064a\u062f \u0627\u0644\u0635\u0648\u0631 AI
-def generate_nb_image", "\U0001f4e5 \u062a\u062d\u0645\u064a\u0644 JSON", "\U0001f4e4 YouCan HTML", "🎨 مولد البرومبتات"])
+        tab1, tab2, tab3, tab4, tab5 = st.tabs(["\U0001f4f1 \u0627\u0644\u0645\u0639\u0627\u064a\u0646\u0629 \u0627\u0644\u0628\u0635\u0631\u064a\u0629", "\U0001f916 \u062a\u0648\u0644\u064a\u062f \u0627\u0644\u0635\u0648\u0631 AI", "\U0001f4e5 \u062a\u062d\u0645\u064a\u0644 JSON", "\U0001f4e4 YouCan HTML", "🎨 مولد البرومبتات"])
         with tab1:
             components.html(st.session_state.final_page, height=4000, scrolling=True)
         with tab2:
