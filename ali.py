@@ -498,11 +498,9 @@ def extract_image_prompts(data):
     idx = [1]
     def add(section, keyword, img_type):
         pid = f"IMG_{idx[0]:02d}_{section.upper()}"
-        poll_url = get_ai_image(keyword, 800, 600, img_type)
-        decoded = urllib.parse.unquote(poll_url.split('prompt/')[1].split('?')[0]) if 'prompt/' in poll_url else keyword
-        product_name = data.get('hero_headline', '')
-        gemini_prompt = f"Generate a high quality realistic image for a landing page section '{section}'. Product: {product_name}. The image should show: {decoded}. Style: professional commercial photography, 8k quality."
-        prompts.append({"id": pid, "section": section, "type": img_type, "keyword": keyword, "prompt": gemini_prompt, "poll_url": poll_url})
+        prompt = get_ai_image(keyword, 800, 600, img_type)
+        decoded = urllib.parse.unquote(prompt.split('prompt/')[1].split('?')[0]) if 'prompt/' in prompt else keyword
+        prompts.append({"id": pid, "section": section, "type": img_type, "keyword": keyword, "prompt": decoded})
         idx[0] += 1
     add("hero", data.get('image_hero_search','product'), "product")
     add("hero_lifestyle", data.get('image_hero_lifestyle_search','lifestyle'), "lifestyle")
@@ -639,20 +637,24 @@ if app_mode == "\U0001f3d7\ufe0f \u0645\u0646\u0634\u0626 \u0635\u0641\u062d\u06
                                     generated[p['id']] = img_data
                             except Exception as e:
                                 st.warning(f"فشل توليد {p['id']}: {str(e)}")
-                        with cols[i % 3]:                        status.text(f"تم توليد {len(generated)}/{len(prompts)} صورة!")
+                            progress.progress((i+1)/len(prompts))
+                        status.text(f"تم توليد {len(generated)}/{len(prompts)} صورة!")
                         if generated:
-                    with cols[i % 3]:                            st.success(f"\u2705 تم توليد {len(generated)} صورة بنجاح!")
+                            st.session_state.generated_images = generated
+                            st.success(f"\u2705 تم توليد {len(generated)} صورة بنجاح!")
                 if 'generated_images' in st.session_state:
-                    prompts = extract_image_prompts(st.session_state.parsed_json) if 'parsed_json' in st.session_state else []
                     st.markdown("#### الصور المولدة:")
                     cols = st.columns(3)
                     for i, (pid, img_b64) in enumerate(st.session_state.generated_images.items()):
-                            with cols[i % 3]:
+                        with cols[i % 3]:
                                                         st.image(img_b64, caption=pid, use_column_width=True)
-                html_with_imgs = st.session_state.final_page
-                for p in prompts:
-                    if p['id'] in st.session_state.generated_images:
-                        html_with_imgs = html_with_imgs.replace(p['poll_url'], st.session_state.generated_images[p['id']], 1)
+                    html_with_imgs = st.session_state.final_page
+                    import re as _re
+                    poll_urls = _re.findall(r'https://image\.pollinations\.ai/prompt/[^"]+', html_with_imgs)
+                    gen_list = list(st.session_state.generated_images.values())
+                    for idx, url in enumerate(poll_urls):
+                        if idx < len(gen_list):
+                            html_with_imgs = html_with_imgs.replace(url, gen_list[idx], 1)
                     st.session_state.final_page_ai = html_with_imgs
                     st.success("تم إدراج الصور في كود HTML بنجاح!")
                     st.download_button("تحميل HTML مع الصور", html_with_imgs, "landing_page_with_ai_images.html", "text/html")
