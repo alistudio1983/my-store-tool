@@ -525,14 +525,16 @@ def extract_image_prompts(data):
     return prompts
 
 def generate_nb_image(api_key, prompt, aspect_ratio="1:1"):
-    """Generate image using Gemini Nano Banana (image generation model)"""
+    """Generate image using Gemini image generation model"""
     try:
-        genai.configure(api_key=api_key, transport="rest")
-        model = genai.GenerativeModel('gemini-2.0-flash-exp')
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                response_mime_type='image/png'
+        from google import genai as genai_client
+        from google.genai import types as genai_types
+        client = genai_client.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model='gemini-2.0-flash-preview-image-generation',
+            contents=prompt,
+            config=genai_types.GenerateContentConfig(
+                response_modalities=['TEXT', 'IMAGE']
             )
         )
         if response.candidates:
@@ -546,6 +548,7 @@ def generate_nb_image(api_key, prompt, aspect_ratio="1:1"):
     except Exception as e:
         st.warning(f"Image gen failed for: {prompt[:50]}... Error: {str(e)[:100]}")
         return None
+
 
 def generate_all_images(api_key, prompts, progress_bar=None):
     """Generate all images from prompts list and return dict of id->data_uri"""
