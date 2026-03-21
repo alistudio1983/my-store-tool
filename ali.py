@@ -531,7 +531,7 @@ def generate_nb_image(api_key, prompt, aspect_ratio="1:1"):
         from google.genai import types as genai_types
         client = genai_client.Client(api_key=api_key)
         response = client.models.generate_content(
-            model='gemini-2.5-flash-preview-image-generation',
+            model='gemini-2.5-flash-image',
             contents=prompt,
             config=genai_types.GenerateContentConfig(
                 response_modalities=['TEXT', 'IMAGE']
