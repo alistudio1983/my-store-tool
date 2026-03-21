@@ -426,14 +426,11 @@ if app_mode == "\U0001f3d7\ufe0f \u0645\u0646\u0634\u0626 \u0635\u0641\u062d\u06
                     mime="application/json"
                 )
                 st.json(st.session_state.parsed_json)
-                        with tab4:
-                                        if 'final_page' in st.session_state:
-                                                            youcan_html = get_youcan_html(st.session_state.final_page)
-                                                                            st.info("\u0627\u0646\u0633\u062e \u0647\u0630\u0627 \u0627\u0644\u0643\u0648\u062f \u0648\u0627\u0644\u0635\u0642\u0647 \u0641\u064a YouCan > \u0627\u0644\u062a\u0635\u0645\u064a\u0645 > HTML")
-                                                                                            st.code(youcan_html, language="html")
-                                                                                                            st.download_button(label="\U0001f4e5 \u062a\u062d\u0645\u064a\u0644 YouCan HTML", data=youcan_html, file_name="youcan_landing.html", mime="text/html")
-
-elif app_mode == "\U0001f50d \u0628\u062d\u062b \u0627\u0644\u0633\u0648\u0642 \u0627\u0644\u0645\u0639\u0645\u0642 (SOP-1)":
+                                with tab4:
+                                                youcan_html = get_youcan_html(st.session_state.final_page)
+                                                            st.info("انسخ هذا الكود والصقه في YouCan")
+                                                                        st.code(youcan_html, language="html")
+                                                                                    st.download_button(label="تحميل YouCan HTML", data=youcan_html, file_name="youcan.html", mime="text/html")
     st.markdown("### \U0001f50d \u0627\u0644\u0628\u062d\u062b \u0627\u0644\u0645\u0639\u0645\u0642 \u0641\u064a \u0627\u0644\u0633\u0648\u0642")
     if st.button("\U0001f9e0 \u0627\u0633\u062a\u062e\u0631\u0627\u062c \u0648\u062b\u0627\u0626\u0642 \u0627\u0644\u0628\u064a\u0639"):
         if not global_api_key or not global_product_name:
