@@ -186,183 +186,263 @@ def build_landing_page_html(data, colors):
     a = colors["accent"]
     g1 = colors["gradient1"]
     g2 = colors["gradient2"]
-    hero_img = get_ai_image(data.get('image_hero_search', 'product'), 300, 350, 'product')
+
+    hero_img = get_ai_image(data.get('image_hero_search', 'product'), 500, 500, 'product')
     hero_lifestyle = get_ai_image(data.get('image_hero_lifestyle_search', 'person using product'), 400, 300, 'lifestyle')
-    hero_closeup = get_ai_image(data.get('image_hero_closeup_search', 'product detail'), 300, 300, 'product')
-    prob_img = get_ai_image(data.get('image_problem_search', 'worried person'), 350, 250, 'problem')
-    prob_img2 = get_ai_image(data.get('image_problem_2_search', 'skin problem'), 300, 200, 'problem')
+    prob_img = get_ai_image(data.get('image_problem_search', 'worried person'), 400, 300, 'problem')
     sol_img = get_ai_image(data.get('image_solution_search', 'happy person'), 400, 300, 'solution')
-    sol_img2 = get_ai_image(data.get('image_solution_2_search', 'product result'), 300, 300, 'lifestyle')
-    before_img = get_ai_image(data.get('image_before_search', 'before treatment'), 300, 350, 'before_after')
-    after_img = get_ai_image(data.get('image_after_search', 'after treatment'), 300, 350, 'before_after')
-    dims = data.get('dimensions', {})
-    dim_img = get_ai_image(dims.get('image_search', 'product dimensions'), 300, 300, 'dimensions')
+    before_img = get_ai_image(data.get('image_before_search', 'before treatment'), 350, 350, 'before_after')
+    after_img = get_ai_image(data.get('image_after_search', 'after treatment'), 350, 350, 'before_after')
+
+    pricing = data.get('pricing', {})
+    cta = data.get('call_to_action', 'اطلب الآن')
     countdown_hours = data.get('countdown_hours', 24)
-    badges_html = ""
-    for badge in data.get('trust_badges', []):
-        badges_html += f' \u2705 {badge}  '
-    problems_html = ""
-    for pt in data.get('problem_points', []):
-        problems_html += f'<li style="padding:8px 0;font-size:1.05rem;">\u274c {pt}</li>\n'
-    features_html = ""
+
+    badges = data.get('trust_badges', [])
+    badges_html = ''.join(f'<div class="badge-item"><span>✅</span> {b}</div>' for b in badges)
+
+    problems_html = ''.join(f'<div class="pain-point">❌ {pt}</div>' for pt in data.get('problem_points', []))
+
+    features_html = ''
     for feat in data.get('features', [])[:4]:
-        feat_img = get_ai_image(feat.get('image_search', 'feature'), 400, 400, 'feature')
-        features_html += f'''<div style="background:white;border-radius:16px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.08);">
-            <img loading="lazy" decoding="async" src="{feat_img}" style="width:100%;height:200px;object-fit:cover;">
-            <div style="padding:20px;text-align:center;"><h4 style="color:{p};margin-bottom:8px;">\u2728 {feat.get('title','')}</h4>
-            <p style="color:#64748b;font-size:0.95rem;">{feat.get('desc','')}</p></div></div>'''
-    ingredients_html = ""
+        feat_img = get_ai_image(feat.get('image_search', 'feature'), 300, 300, 'feature')
+        features_html += f'''<div class="feat-card">
+            <img loading="lazy" decoding="async" src="{feat_img}" alt="{feat.get('title','')}">
+            <h4>{feat.get('title','')}</h4>
+            <p>{feat.get('desc','')}</p>
+        </div>'''
+
+    ingredients_html = ''
     for ing in data.get('ingredients', [])[:3]:
-        ing_img = get_ai_image(ing.get('image_search', 'natural ingredient'), 300, 300, 'ingredient')
-        ingredients_html += f'''<div style="text-align:center;">
-            <img loading="lazy" decoding="async" src="{ing_img}" style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin:0 auto 15px;display:block;box-shadow:0 4px 15px rgba(0,0,0,0.1);">
-            <h4 style="color:{p};margin-bottom:5px;">{ing.get('name','')}</h4>
-            <p style="color:#64748b;font-size:0.9rem;">{ing.get('benefit','')}</p></div>'''
-    steps_html = ""
+        ing_img = get_ai_image(ing.get('image_search', 'ingredient'), 200, 200, 'ingredient')
+        ingredients_html += f'''<div class="ing-card">
+            <img loading="lazy" decoding="async" src="{ing_img}" alt="{ing.get('name','')}">
+            <h4>{ing.get('name','')}</h4>
+            <p>{ing.get('benefit','')}</p>
+        </div>'''
+
+    reviews_html = ''
+    for rev in data.get('reviews', [])[:3]:
+        stars = '⭐' * int(rev.get('rating', 5))
+        rev_img = get_ai_image(rev.get('image_search', 'person'), 80, 80, 'review')
+        reviews_html += f'''<div class="review-card">
+            <div class="rev-top">
+                <img loading="lazy" decoding="async" src="{rev_img}" class="rev-avatar">
+                <div class="rev-info"><strong>{rev.get('name','')}</strong><div class="stars">{stars}</div></div>
+            </div>
+            <p class="rev-text">"{rev.get('comment','')}"</p>
+            <span class="verified-badge">✅ مشتري موثق</span>
+        </div>'''
+
+    faq_html = ''
+    for faq in data.get('faq', [])[:4]:
+        faq_html += f'''<details class="faq-item">
+            <summary>▸ {faq.get('q','')}</summary>
+            <p>{faq.get('a','')}</p>
+        </details>'''
+
+    steps_html = ''
     step_images = data.get('how_to_use_images', [])
     for i, step in enumerate(data.get('how_to_use', [])[:3], 1):
-        step_kw = step_images[i-1] if i-1 < len(step_images) else f'step {i} tutorial'
-        step_img = get_ai_image(step_kw, 500, 400, 'gif_step')
-        direction = 'row' if i % 2 != 0 else 'row-reverse'
-        steps_html += f'''<div style="display:flex;flex-direction:{direction};align-items:center;gap:25px;flex-wrap:wrap;margin-bottom:30px;background:white;border-radius:16px;padding:20px;box-shadow:0 4px 15px rgba(0,0,0,0.06);">
-            <img loading="lazy" decoding="async" src="{step_img}" style="flex:1;min-width:220px;max-width:350px;border-radius:12px;">
-            <div style="flex:1;min-width:220px;"><div style="width:50px;height:50px;background:linear-gradient(135deg,{g1},{g2});border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:1.3rem;margin-bottom:12px;">{i}</div>
-            <p style="font-size:1.1rem;color:#334155;line-height:1.7;">{step}</p></div></div>'''
-    stats_html = ""
+        step_kw = step_images[i-1] if i-1 < len(step_images) else f'step {i}'
+        step_img = get_ai_image(step_kw, 300, 250, 'gif_step')
+        steps_html += f'''<div class="step-card">
+            <div class="step-num">{i}</div>
+            <img loading="lazy" decoding="async" src="{step_img}" alt="خطوة {i}">
+            <p>{step}</p>
+        </div>'''
+
+    stats_html = ''
     for stat in data.get('stats', [])[:3]:
-        stats_html += f'<div style="text-align:center;"><div style="font-size:2.2rem;font-weight:900;color:white;">{stat.get("number","")}</div><div style="color:rgba(255,255,255,0.8);font-size:0.95rem;margin-top:5px;">{stat.get("label","")}</div></div>'
-    reviews_html = ""
-    for rev in data.get('reviews', [])[:3]:
-        stars = '\u2b50' * int(rev.get('rating', 5))
-        rev_img = get_ai_image(rev.get('image_search', 'person portrait'), 150, 150, 'review')
-        reviews_html += f'''<div style="background:white;border-radius:16px;padding:25px;box-shadow:0 4px 15px rgba(0,0,0,0.08);">
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;"><img loading="lazy" decoding="async" src="{rev_img}" style="width:55px;height:55px;border-radius:50%;object-fit:cover;">
-            <div><strong>{rev.get('name','')}</strong><br><span style="color:{a};">{stars}</span></div></div>
-            <p style="color:#475569;font-style:italic;line-height:1.6;">\"{rev.get('comment','')}</p>
-            <p style="color:{p};font-size:0.85rem;margin-top:8px;">\u2705 \u0645\u0634\u062a\u0631\u064a \u0645\u0648\u062b\u0642</p></div>'''
-    faq_html = ""
-    for faq in data.get('faq', [])[:4]:
-        faq_html += f'''<details style="background:white;border-radius:12px;padding:18px 22px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);cursor:pointer;">
-            <summary style="font-weight:700;color:{p};font-size:1.05rem;">{faq.get('q','')}</summary>
-            <p style="color:#64748b;margin-top:10px;line-height:1.7;">{faq.get('a','')}</p></details>'''
-    pricing = data.get('pricing', {})
-    cta = data.get('call_to_action', '\u0627\u0637\u0644\u0628 \u0627\u0644\u0622\u0646')
-    html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+        stats_html += f'<div class="stat-box"><div class="stat-num">{stat.get("number","")}</div><div class="stat-label">{stat.get("label","")}</div></div>'
+
+    html = f'''<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+//fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
-* {{ margin:0; padding:0; box-sizing:border-box; }}
-body {{ font-family:"Cairo",sans-serif; background:{s}; color:#1e293b; direction:rtl; scroll-behavior:smooth; }}
-img {{ max-width:100%; height:auto; display:block; }}
-.container {{ max-width:860px; margin:0 auto; padding:0 20px; }}
-.btn {{ display:block; background:linear-gradient(135deg,{a},{a}cc); color:white; padding:18px 30px; border-radius:14px; font-weight:900; font-size:1.25rem; text-decoration:none; text-align:center; box-shadow:0 8px 25px {a}55; transition:all 0.3s; border:none; cursor:pointer; width:100%; max-width:420px; margin:0 auto; }}
-.btn:hover {{ transform:translateY(-3px); box-shadow:0 14px 35px {a}77; }}
-.section {{ padding:55px 20px; }}
-.section-title {{ font-size:1.9rem; font-weight:900; color:{p}; text-align:center; margin-bottom:30px; line-height:1.3; }}
-.badge-bar {{ text-align:center; padding:15px; }}
-.img-text-row {{ display:flex; align-items:center; gap:30px; flex-wrap:wrap; margin-bottom:30px; }}
-.img-text-row img {{ flex:1; min-width:260px; border-radius:18px; box-shadow:0 10px 30px rgba(0,0,0,0.12); }}
-.img-text-row .text-side {{ flex:1; min-width:240px; }}
-.grid-2 {{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }}
-.countdown-bar {{ background:linear-gradient(135deg,#dc2626,#ef4444); color:white; padding:20px; text-align:center; position:sticky; top:0; z-index:1000; box-shadow:0 4px 15px rgba(220,38,38,0.4); }}
-.countdown-bar .timer {{ display:flex; justify-content:center; gap:15px; margin-top:8px; }}
-.countdown-bar .timer div {{ background:rgba(0,0,0,0.3); padding:10px 18px; border-radius:10px; min-width:65px; }}
-.countdown-bar .timer div span {{ display:block; font-size:1.8rem; font-weight:900; }}
-.countdown-bar .timer div small {{ font-size:0.75rem; opacity:0.9; }}
-@media(max-width:600px) {{ .grid-2 {{ grid-template-columns:1fr; }} .img-text-row {{ flex-direction:column; }} }}
-</style></head><body>'''
-    html += f'''<div class="countdown-bar" id="countdown-section">
-        <div style="font-weight:700;font-size:1.1rem;">\u23f0 \u0627\u0644\u0639\u0631\u0636 \u064a\u0646\u062a\u0647\u064a \u062e\u0644\u0627\u0644</div>
-        <div class="timer"><div><span id="cd-hours">00</span><small>\u0633\u0627\u0639\u0629</small></div><div><span id="cd-mins">00</span><small>\u062f\u0642\u064a\u0642\u0629</small></div><div><span id="cd-secs">00</span><small>\u062b\u0627\u0646\u064a\u0629</small></div></div></div>'''
-    html += f'''<section style="background:linear-gradient(160deg,{g1},{g2});padding:60px 20px 50px;">
-        <div class="container" style="display:flex;align-items:center;gap:35px;flex-wrap:wrap;">
-            <div style="flex:1;min-width:280px;"><div class="badge-bar" style="margin-bottom:20px;background:rgba(255,255,255,0.15);border-radius:12px;padding:12px;color:white;">{badges_html}</div>
-                <h1 style="font-size:2.5rem;font-weight:900;color:white;line-height:1.3;margin-bottom:15px;">{data.get('hero_headline','')}</h1>
-                <p style="color:rgba(255,255,255,0.85);font-size:1.15rem;line-height:1.7;margin-bottom:20px;">{data.get('hero_subheadline','')}</p>
-                <div style="display:flex;align-items:center;gap:10px;margin-bottom:25px;"><span style="color:{a};font-size:1.3rem;">\u2665</span><span style="color:white;font-weight:700;">{data.get('social_proof_number','')}</span><span style="color:rgba(255,255,255,0.8);">{data.get('social_proof_text','')}</span></div>
-                <a href="#order" class="btn">{cta} \u2794</a></div>
-            <div style="flex:1;min-width:280px;"><img loading="lazy" decoding="async" src="{hero_img}" style="border-radius:20px;box-shadow:0 20px 50px rgba(0,0,0,0.3);">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px;"><img loading="lazy" decoding="async" src="{hero_lifestyle}" style="border-radius:12px;"><img loading="lazy" decoding="async" src="{hero_closeup}" style="border-radius:12px;"></div></div></div></section>'''
-    html += f'''<section style="background:linear-gradient(135deg,{p},{g2});padding:35px 20px;"><div class="container" style="display:flex;justify-content:space-around;flex-wrap:wrap;gap:20px;">{stats_html}</div></section>'''
-    html += f'''<section class="section" style="background:white;"><div class="container">
-        <h2 class="section-title">\u26a0\ufe0f {data.get('problem_title','')}</h2>
-        <div class="img-text-row"><img loading="lazy" decoding="async" src="{prob_img}"><div class="text-side">
-            <p style="color:#64748b;font-size:1.05rem;line-height:1.8;margin-bottom:20px;">{data.get('problem_description','')}</p>
-            <ul style="list-style:none;">{problems_html}</ul></div></div>
-        <img loading="lazy" decoding="async" src="{prob_img2}" style="max-width:500px;margin:20px auto;border-radius:16px;">
-    </div></section>'''
-    html += f'''<section class="section" style="background:{s};"><div class="container">
-        <h2 class="section-title">\u2728 {data.get('solution_title','')}</h2>
-        <div class="img-text-row" style="flex-direction:row-reverse;"><img loading="lazy" decoding="async" src="{sol_img}"><div class="text-side">
-            <p style="color:#64748b;font-size:1.05rem;line-height:1.8;">{data.get('solution_description','')}</p></div></div>
-        <img loading="lazy" decoding="async" src="{sol_img2}" style="max-width:500px;margin:20px auto;border-radius:16px;">
-        <h3 style="text-align:center;color:{p};margin:30px 0 20px;">\u2728 \u062a\u062d\u0648\u0644 \u0645\u0630\u0647\u0644!</h3>
-        <div style="display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;">
-            <div style="text-align:center;"><img loading="lazy" decoding="async" src="{before_img}" style="max-width:280px;border-radius:16px;"><p style="margin-top:8px;font-weight:700;color:#ef4444;">\u0642\u0628\u0644</p></div>
-            <div style="font-size:2.5rem;color:{a};">\u27a1</div>
-            <div style="text-align:center;"><img loading="lazy" decoding="async" src="{after_img}" style="max-width:280px;border-radius:16px;"><p style="margin-top:8px;font-weight:700;color:#22c55e;">\u0628\u0639\u062f</p></div></div>
-    </div></section>'''
-    html += f'''<section class="section" style="background:white;"><div class="container">
-        <h2 class="section-title">\u0644\u0645\u0627\u0630\u0627 \u0647\u0630\u0627 \u0627\u0644\u0645\u0646\u062a\u062c \u0645\u062e\u062a\u0644\u0641\u061f</h2>
-        <div class="grid-2">{features_html}</div></div></section>'''
-    html += f'''<section class="section" style="background:{s};"><div class="container">
-        <h2 class="section-title">\u0627\u0644\u0633\u0631 \u0641\u064a \u0645\u0643\u0648\u0646\u0627\u062a\u0646\u0627</h2>
-        <div style="display:flex;justify-content:center;gap:40px;flex-wrap:wrap;">{ingredients_html}</div></div></section>'''
-    html += f'''<section class="section" style="background:white;"><div class="container">
-        <h2 class="section-title">\U0001f3ac \u0643\u064a\u0641 \u062a\u0633\u062a\u062e\u062f\u0645\u0647\u061f</h2>
-        <p style="text-align:center;color:#64748b;margin-bottom:30px;">\u062a\u0639\u0644\u064a\u0645\u0627\u062a \u0627\u0644\u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u062e\u0637\u0648\u0629 \u0628\u062e\u0637\u0648\u0629</p>
-        {steps_html}</div></section>'''
-    html += f'''<section class="section" style="background:{s};"><div class="container">
-        <h2 class="section-title">\U0001f4cf \u0623\u0628\u0639\u0627\u062f \u0648\u062d\u062c\u0645 \u0627\u0644\u0645\u0646\u062a\u062c</h2>
-        <div style="display:flex;align-items:center;gap:30px;flex-wrap:wrap;justify-content:center;">
-            <img loading="lazy" decoding="async" src="{dim_img}" style="max-width:350px;border-radius:16px;">
-            <div style="min-width:250px;"><h4 style="color:{p};margin-bottom:15px;">\u0627\u0644\u0645\u0648\u0627\u0635\u0641\u0627\u062a \u0627\u0644\u062a\u0642\u0646\u064a\u0629</h4>
-                <table style="width:100%;border-collapse:collapse;"><tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:12px;font-weight:700;color:{p};">\u0627\u0644\u0627\u0631\u062a\u0641\u0627\u0639</td><td style="padding:12px;">{dims.get('height','')}</td></tr>
-                <tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:12px;font-weight:700;color:{p};">\u0627\u0644\u0639\u0631\u0636</td><td style="padding:12px;">{dims.get('width','')}</td></tr>
-                <tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:12px;font-weight:700;color:{p};">\u0627\u0644\u0648\u0632\u0646</td><td style="padding:12px;">{dims.get('weight','')}</td></tr>
-                <tr><td style="padding:12px;font-weight:700;color:{p};">\u0627\u0644\u062d\u062c\u0645</td><td style="padding:12px;">{dims.get('volume','')}</td></tr></table></div></div></div></section>'''
-    html += f'''<section class="section" style="background:white;"><div class="container">
-        <h2 class="section-title">\u2b50 \u0622\u0631\u0627\u0621 \u0627\u0644\u0639\u0645\u0644\u0627\u0621</h2>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;">{reviews_html}</div></div></section>'''
-    html += f'''<section id="order" class="section" style="background:linear-gradient(135deg,{s},{s});border-top:4px solid {a};"><div class="container" style="text-align:center;">
-        <h2 class="section-title">\U0001f525 \u0627\u062d\u0635\u0644 \u0639\u0644\u064a\u0647 \u0627\u0644\u0622\u0646!</h2>
-        <div style="background:white;border-radius:20px;padding:35px;max-width:450px;margin:0 auto;box-shadow:0 10px 30px rgba(0,0,0,0.1);">
-            <p style="text-decoration:line-through;color:#94a3b8;font-size:1.2rem;">{pricing.get('original','')} {pricing.get('currency','')}</p>
-            <p style="font-size:2.8rem;font-weight:900;color:{p};">{pricing.get('discounted','')}<span style="font-size:1rem;color:#64748b;"> {pricing.get('currency','')}</span></p>
-            <span style="background:#dc2626;color:white;padding:5px 15px;border-radius:20px;font-weight:700;font-size:0.9rem;">\u062e\u0635\u0645 {pricing.get('discount_percent','')}</span>
-            <div style="background:linear-gradient(135deg,#dc2626,#ef4444);color:white;border-radius:12px;padding:15px;margin:20px 0;">
-                <p style="font-weight:700;margin-bottom:8px;">\u23f0 {data.get('urgency_text','')}</p>
-                <div style="display:flex;justify-content:center;gap:10px;"><div style="background:rgba(0,0,0,0.3);padding:8px 14px;border-radius:8px;"><span id="cd2-h" style="font-size:1.4rem;font-weight:900;">00</span><br><small>\u0633\u0627\u0639\u0629</small></div><div style="background:rgba(0,0,0,0.3);padding:8px 14px;border-radius:8px;"><span id="cd2-m" style="font-size:1.4rem;font-weight:900;">00</span><br><small>\u062f\u0642\u064a\u0642\u0629</small></div><div style="background:rgba(0,0,0,0.3);padding:8px 14px;border-radius:8px;"><span id="cd2-s" style="font-size:1.4rem;font-weight:900;">00</span><br><small>\u062b\u0627\u0646\u064a\u0629</small></div></div></div>
-            <a href="#" class="btn" style="margin-top:15px;">{cta} \u2794</a></div></div></section>'''
-    html += f'''<section class="section" style="background:white;"><div class="container" style="max-width:700px;margin:0 auto;">
-        <h2 class="section-title">\u2753 \u0627\u0644\u0623\u0633\u0626\u0644\u0629 \u0627\u0644\u0634\u0627\u0626\u0639\u0629</h2>
-        {faq_html}</div></section>'''
-    html += f'''<section class="section" style="background:white;"><div class="container" style="text-align:center;">
-        <div style="max-width:550px;margin:0 auto;padding:35px;background:linear-gradient(135deg,{s},white);border-radius:20px;border:2px solid {p}20;">
-            <div style="font-size:4rem;margin-bottom:15px;">\U0001f6e1</div>
-            <h3 style="color:{p};font-size:1.6rem;font-weight:900;margin-bottom:10px;">{data.get('guarantee_title','')}</h3>
-            <p style="color:#64748b;font-size:1rem;line-height:1.7;">{data.get('guarantee_text','')}</p></div></div></section>'''
-    html += f'''<section style="background:linear-gradient(160deg,{g1},{g2});padding:50px 20px;"><div class="container" style="text-align:center;">
-        <h2 style="color:white;font-size:1.9rem;font-weight:900;margin-bottom:20px;">\u2764\ufe0f \u0644\u0627 \u062a\u0641\u0648\u062a \u0647\u0630\u0627 \u0627\u0644\u0639\u0631\u0636!</h2>
-        <a href="#order" class="btn" style="font-size:1.3rem;padding:20px 40px;">{cta} \u2794</a>
-        <p style="color:rgba(255,255,255,0.75);margin-top:20px;font-size:0.9rem;">{data.get('footer_text','')}</p></div></section>'''
-    html += f'''<script>
-    (function(){{
-        var hrs={countdown_hours};
-        var key='cd_end_'+document.title;
-        var end=localStorage.getItem(key);
-        if(!end){{end=Date.now()+hrs*3600000;localStorage.setItem(key,end);}}
-        function tick(){{
-            var left=Math.max(0,end-Date.now());
-            var h=Math.floor(left/3600000);var m=Math.floor((left%3600000)/60000);var s=Math.floor((left%60000)/1000);
-            var pad=function(n){{return n<10?'0'+n:n;}};
-            if(document.getElementById('cd-hours')){{document.getElementById('cd-hours').textContent=pad(h);document.getElementById('cd-mins').textContent=pad(m);document.getElementById('cd-secs').textContent=pad(s);}}
-            if(document.getElementById('cd2-h')){{document.getElementById('cd2-h').textContent=pad(h);document.getElementById('cd2-m').textContent=pad(m);document.getElementById('cd2-s').textContent=pad(s);}}
-            if(left>0)setTimeout(tick,1000);
-        }}
-        tick();
-    }})();
-    </script></body></html>'''
-    html = html.replace('<img ', '<img loading=lazy ')
+*{{margin:0;padding:0;box-sizing:border-box;}}
+body{{font-family:'Cairo',sans-serif;background:#fff;color:#1a1a2e;direction:rtl;}}
+img{{max-width:100%;height:auto;display:block;}}
+.topbar{{background:linear-gradient(135deg,{g1},{g2});color:#fff;text-align:center;padding:12px 10px;position:sticky;top:0;z-index:999;}}
+.topbar .offer-text{{font-weight:900;font-size:1.1rem;margin-bottom:6px;}}
+.topbar .timer-row{{display:flex;justify-content:center;align-items:center;gap:15px;flex-wrap:wrap;font-size:0.9rem;}}
+.topbar .timer-box{{background:rgba(0,0,0,0.25);padding:6px 14px;border-radius:8px;font-weight:700;font-size:1.3rem;min-width:50px;text-align:center;}}
+.topbar .trust-icons{{display:flex;justify-content:center;gap:20px;margin-top:8px;font-size:0.85rem;opacity:0.95;}}
+.container{{max-width:680px;margin:0 auto;padding:0 15px;}}
+.hero{{background:linear-gradient(180deg,{s} 0%,#fff 100%);padding:30px 15px 20px;text-align:center;}}
+.hero h1{{font-size:1.6rem;font-weight:900;color:{p};line-height:1.4;margin-bottom:10px;}}
+.hero .sub{{font-size:1rem;color:#555;margin-bottom:15px;line-height:1.6;}}
+.hero-img{{border-radius:16px;margin:0 auto 15px;max-width:350px;box-shadow:0 8px 30px rgba(0,0,0,0.12);}}
+.badge-row{{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:15px 0;}}
+.badge-item{{background:#f0fdf4;border:1px solid #bbf7d0;padding:6px 14px;border-radius:20px;font-size:0.85rem;font-weight:600;color:#166534;}}
+.social-proof{{background:{a};color:#fff;text-align:center;padding:14px;font-size:1.1rem;font-weight:700;border-radius:12px;margin:15px auto;max-width:350px;}}
+.btn-cta{{display:block;background:linear-gradient(135deg,{a},#f59e0b);color:#fff;padding:16px 30px;border-radius:14px;font-weight:900;font-size:1.2rem;text-decoration:none;text-align:center;max-width:400px;margin:20px auto;box-shadow:0 6px 20px {a}55;border:none;cursor:pointer;transition:transform 0.2s;}}
+.btn-cta:hover{{transform:translateY(-2px);}}
+.section{{padding:35px 15px;}}
+.section-title{{font-size:1.5rem;font-weight:900;color:{p};text-align:center;margin-bottom:20px;line-height:1.4;}}
+.section-dark{{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;padding:35px 15px;}}
+.section-dark .section-title{{color:#fff;}}
+.pain-point{{background:#fef2f2;border-right:4px solid #ef4444;padding:12px 16px;margin-bottom:10px;border-radius:8px;font-size:0.95rem;color:#991b1b;}}
+.solution-row{{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:20px;}}
+.solution-row img{{flex:1;min-width:200px;border-radius:14px;}}
+.solution-row .text-side{{flex:1;min-width:220px;}}
+.ba-section{{text-align:center;}}
+.ba-grid{{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin:20px 0;}}
+.ba-card{{text-align:center;flex:1;min-width:140px;}}
+.ba-card img{{border-radius:14px;border:3px solid #e5e7eb;margin-bottom:8px;}}
+.ba-card.before img{{border-color:#ef4444;}}
+.ba-card.after img{{border-color:#22c55e;}}
+.ba-label{{font-weight:900;font-size:1.1rem;padding:6px 20px;border-radius:20px;display:inline-block;}}
+.ba-arrow{{font-size:2rem;color:{a};font-weight:900;}}
+.feat-grid{{display:grid;grid-template-columns:1fr 1fr;gap:15px;}}
+.feat-card{{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.08);text-align:center;}}
+.feat-card img{{width:100%;height:160px;object-fit:cover;}}
+.feat-card h4{{color:{p};padding:10px 10px 0;font-size:0.95rem;}}
+.feat-card p{{padding:0 10px 12px;font-size:0.85rem;color:#666;}}
+.ing-grid{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}}
+.ing-card{{text-align:center;background:{s};border-radius:14px;padding:15px 8px;}}
+.ing-card img{{width:80px;height:80px;border-radius:50%;margin:0 auto 8px;object-fit:cover;}}
+.ing-card h4{{font-size:0.9rem;color:{p};}}
+.ing-card p{{font-size:0.8rem;color:#666;}}
+.steps-grid{{display:flex;gap:15px;flex-wrap:wrap;justify-content:center;}}
+.step-card{{flex:1;min-width:180px;max-width:220px;text-align:center;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.06);}}
+.step-num{{background:linear-gradient(135deg,{g1},{g2});color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;margin:12px auto 8px;}}
+.step-card img{{width:100%;height:130px;object-fit:cover;}}
+.step-card p{{padding:10px;font-size:0.85rem;}}
+.stats-row{{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin:20px 0;}}
+.stat-box{{text-align:center;min-width:100px;}}
+.stat-num{{font-size:1.8rem;font-weight:900;color:{a};}}
+.stat-label{{font-size:0.85rem;color:rgba(255,255,255,0.85);}}
+.reviews-grid{{display:flex;gap:15px;flex-wrap:wrap;justify-content:center;}}
+.review-card{{background:#fff;border-radius:14px;padding:16px;min-width:200px;flex:1;max-width:300px;box-shadow:0 4px 15px rgba(0,0,0,0.06);}}
+.rev-top{{display:flex;align-items:center;gap:10px;margin-bottom:10px;}}
+.rev-avatar{{width:50px;height:50px;border-radius:50%;object-fit:cover;}}
+.rev-info strong{{display:block;font-size:0.9rem;}}
+.stars{{color:#f59e0b;font-size:0.85rem;}}
+.rev-text{{font-size:0.9rem;color:#444;font-style:italic;margin-bottom:8px;}}
+.verified-badge{{background:#f0fdf4;color:#166534;font-size:0.75rem;padding:3px 10px;border-radius:10px;}}
+.pricing-box{{text-align:center;background:linear-gradient(135deg,{s},#fff);padding:30px 15px;border-radius:20px;margin:20px auto;max-width:400px;box-shadow:0 8px 30px rgba(0,0,0,0.1);}}
+.old-price{{font-size:1.3rem;color:#999;text-decoration:line-through;}}
+.new-price{{font-size:2.2rem;font-weight:900;color:{p};}}
+.discount-tag{{background:#ef4444;color:#fff;padding:4px 14px;border-radius:20px;font-size:0.85rem;font-weight:700;display:inline-block;margin-top:8px;}}
+.faq-item{{border-bottom:1px solid #e5e7eb;padding:14px 0;}}
+.faq-item summary{{font-weight:700;cursor:pointer;font-size:1rem;color:{p};}}
+.faq-item p{{padding:10px 0;color:#555;font-size:0.9rem;}}
+.guarantee-box{{text-align:center;background:#f0fdf4;border:2px solid #22c55e;border-radius:16px;padding:25px;margin:20px auto;max-width:500px;}}
+.final-cta{{text-align:center;background:linear-gradient(135deg,{g1},{g2});padding:40px 15px;color:#fff;}}
+@media(max-width:600px){{.feat-grid{{grid-template-columns:1fr;}}.ing-grid{{grid-template-columns:1fr 1fr;}}.ba-grid{{flex-direction:column;}}}}
+</style>
+</head>
+<body>
+<!-- TOPBAR -->
+<div class="topbar">
+<div class="offer-text">{data.get('urgency_text','')}</div>
+<div class="timer-row"><div class="timer-box" id="cd-hours">00</div><span>:</span><div class="timer-box" id="cd-mins">00</div><span>:</span><div class="timer-box" id="cd-secs">00</div></div>
+<div class="trust-icons">{badges_html}</div>
+</div>
+<!-- HERO -->
+<div class="hero">
+<div class="container">
+<h1>{data.get('hero_headline','')}</h1>
+<p class="sub">{data.get('hero_subheadline','')}</p>
+<img loading="lazy" decoding="async" src="{hero_img}" alt="product" class="hero-img">
+<div class="badge-row">{badges_html}</div>
+<div class="social-proof">{data.get('social_proof_number','')} {data.get('social_proof_text','')}</div>
+<a href="#order" class="btn-cta">{cta} &#10140;</a>
+</div>
+</div>
+<!-- STATS -->
+<div class="section-dark"><div class="container"><div class="stats-row">{stats_html}</div></div></div>
+<!-- PROBLEM -->
+<div class="section"><div class="container">
+<h2 class="section-title">{data.get('problem_title','')}</h2>
+<div class="solution-row"><img loading="lazy" decoding="async" src="{prob_img}" alt="problem"><div class="text-side"><p>{data.get('problem_description','')}</p>{problems_html}</div></div>
+</div></div>
+<!-- SOLUTION -->
+<div class="section" style="background:{s};"><div class="container">
+<h2 class="section-title">{data.get('solution_title','')}</h2>
+<div class="solution-row"><div class="text-side"><p>{data.get('solution_description','')}</p></div><img loading="lazy" decoding="async" src="{sol_img}" alt="solution"></div>
+</div></div>
+<!-- BEFORE AFTER -->
+<div class="section ba-section"><div class="container">
+<h2 class="section-title">&#10024; &#1578;&#1581;&#1608;&#1604; &#1605;&#1584;&#1607;&#1604;!</h2>
+<div class="ba-grid">
+<div class="ba-card before"><img loading="lazy" decoding="async" src="{before_img}" alt="before"><div class="ba-label" style="background:#fef2f2;color:#ef4444;">&#1602;&#1576;&#1604;</div></div>
+<div class="ba-arrow">&#10145;</div>
+<div class="ba-card after"><img loading="lazy" decoding="async" src="{after_img}" alt="after"><div class="ba-label" style="background:#f0fdf4;color:#22c55e;">&#1576;&#1593;&#1583;</div></div>
+</div>
+<a href="#order" class="btn-cta">{cta} &#10140;</a>
+</div></div>
+<!-- FEATURES -->
+<div class="section"><div class="container">
+<h2 class="section-title">&#1604;&#1605;&#1575;&#1584;&#1575; &#1607;&#1584;&#1575; &#1575;&#1604;&#1605;&#1606;&#1578;&#1580; &#1605;&#1582;&#1578;&#1604;&#1601;&#1567;</h2>
+<div class="feat-grid">{features_html}</div>
+</div></div>
+<!-- INGREDIENTS -->
+<div class="section" style="background:{s};"><div class="container">
+<h2 class="section-title">&#1575;&#1604;&#1587;&#1585; &#1601;&#1610; &#1605;&#1603;&#1608;&#1606;&#1575;&#1578;&#1606;&#1575;</h2>
+<div class="ing-grid">{ingredients_html}</div>
+</div></div>
+<!-- HOW TO USE -->
+<div class="section"><div class="container">
+<h2 class="section-title">&#1603;&#1610;&#1601; &#1578;&#1587;&#1578;&#1582;&#1583;&#1605;&#1607;&#1567;</h2>
+<div class="steps-grid">{steps_html}</div>
+</div></div>
+<!-- REVIEWS -->
+<div class="section-dark"><div class="container">
+<h2 class="section-title">&#1570;&#1585;&#1575;&#1569; &#1575;&#1604;&#1593;&#1605;&#1604;&#1575;&#1569;</h2>
+<div class="reviews-grid">{reviews_html}</div>
+</div></div>
+<!-- PRICING -->
+<div class="section" id="order"><div class="container">
+<div class="pricing-box">
+<h2 class="section-title">&#1575;&#1581;&#1589;&#1604; &#1593;&#1604;&#1610;&#1607; &#1575;&#1604;&#1570;&#1606;!</h2>
+<div class="old-price">{pricing.get('original','')} {pricing.get('currency','')}</div>
+<div class="new-price">{pricing.get('discounted','')} {pricing.get('currency','')}</div>
+<div class="discount-tag">&#1582;&#1589;&#1605; {pricing.get('discount_percent','')}</div>
+<a href="#" class="btn-cta" style="margin-top:20px;">{cta} &#10140;</a>
+</div>
+</div></div>
+<!-- FAQ -->
+<div class="section"><div class="container">
+<h2 class="section-title">&#1575;&#1604;&#1571;&#1587;&#1574;&#1604;&#1577; &#1575;&#1604;&#1588;&#1575;&#1574;&#1593;&#1577;</h2>
+{faq_html}
+</div></div>
+<!-- GUARANTEE -->
+<div class="section"><div class="container">
+<div class="guarantee-box">
+<h3>{data.get('guarantee_title','')}</h3>
+<p>{data.get('guarantee_text','')}</p>
+</div>
+</div></div>
+<!-- FINAL CTA -->
+<div class="final-cta">
+<div class="container">
+<h2 style="font-size:1.5rem;margin-bottom:15px;">&#1604;&#1575; &#1578;&#1601;&#1608;&#1578; &#1607;&#1584;&#1575; &#1575;&#1604;&#1593;&#1585;&#1590;!</h2>
+<a href="#order" class="btn-cta" style="background:#fff;color:{p};">{cta} &#10140;</a>
+<p style="margin-top:15px;font-size:0.85rem;opacity:0.8;">{data.get('footer_text','')}</p>
+</div>
+</div>
+<script>
+(function(){{
+var hrs={countdown_hours};
+var key='cd_end_'+document.title;
+var end=localStorage.getItem(key);
+if(!end){{end=Date.now()+hrs*3600000;localStorage.setItem(key,end);}}
+function tick(){{
+var left=Math.max(0,end-Date.now());
+var h=Math.floor(left/3600000);var m=Math.floor((left%3600000)/60000);var s=Math.floor((left%60000)/1000);
+var pad=function(n){{return n<10?'0'+n:n;}};
+if(document.getElementById('cd-hours')){{document.getElementById('cd-hours').textContent=pad(h);document.getElementById('cd-mins').textContent=pad(m);document.getElementById('cd-secs').textContent=pad(s);}}
+if(left>0)setTimeout(tick,1000);
+}}
+tick();
+}})();
+</script>
+</body></html>'''
 
     return html
 
