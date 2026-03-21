@@ -447,15 +447,51 @@ tick();
     return html
 
 def get_youcan_html(html):
-    """Strip script tags for YouCan compatibility"""
+    """Convert HTML to YouCan-compatible: inline all CSS, remove scripts/style/head"""
     import re
-    clean = re.sub(r'<script[^>]*>.*?</script>', '', html, flags=re.DOTALL)
-    # Remove data-src and restore src for YouCan
+    # 1. Extract CSS rules from <style> block
+    css_map = {}
+    style_match = re.search(r'<style[^>]*>(.*?)</style>', html, re.DOTALL)
+    if style_match:
+        css_text = style_match.group(1)
+        for m in re.finditer(r'\.([a-zA-Z0-9_-]+)\s*\{([^}]+)\}', css_text):
+            cls_name = m.group(1)
+            rules = m.group(2).strip().replace('\n', ' ')
+            css_map[cls_name] = rules
+    # 2. Remove <style>, <script>, and structural tags
+    clean = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL)
+    clean = re.sub(r'<script[^>]*>.*?</script>', '', clean, flags=re.DOTALL)
+    clean = re.sub(r'<!DOCTYPE[^>]*>', '', clean, flags=re.IGNORECASE)
+    clean = re.sub(r'</?(?:html|head|body)[^>]*>', '', clean, flags=re.IGNORECASE)
+    clean = re.sub(r'<meta[^>]*>', '', clean, flags=re.IGNORECASE)
+    clean = re.sub(r'<link[^>]*>', '', clean, flags=re.IGNORECASE)
+    # 3. Inline CSS classes into style attributes
+    def replace_classes(m):
+        tag = m.group(0)
+        cls_m = re.search(r'class="([^"]+)"', tag)
+        if not cls_m:
+            return tag
+        classes = cls_m.group(1).split()
+        inline = []
+        for c in classes:
+            if c in css_map:
+                inline.append(css_map[c])
+        # Get existing style if any
+        sty_m = re.search(r'style="([^"]+)"', tag)
+        if sty_m:
+            inline.append(sty_m.group(1).rstrip(';'))
+            tag = tag.replace(f'style="{sty_m.group(1)}"', '')
+        tag = tag.replace(f'class="{cls_m.group(1)}"', '')
+        if inline:
+            combined = '; '.join(inline)
+                        tag = tag.rstrip('>').rstrip('/').rstrip() + f' style="{combined}">'
+        return tag
+    clean = re.sub(r'<[a-zA-Z][^>]*class="[^"]+"[^>]*/?>', replace_classes, clean)
+    # 4. Fix data-src
     clean = clean.replace(' data-src="', ' src="')
-    # Remove countdown IDs that need JS
-    clean = clean.replace('id="cd-hours"', '').replace('id="cd-mins"', '').replace('id="cd-secs"', '')
-    clean = clean.replace('id="cd2-h"', '').replace('id="cd2-m"', '').replace('id="cd2-s"', '')
-    return clean
+    # 5. Clean up extra whitespace
+    clean = re.sub(r'\n\s*\n\s*\n', '\n\n', clean)
+    return clean.strip()
     
 def extract_image_prompts(data):
     prompts = []
