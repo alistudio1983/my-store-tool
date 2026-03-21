@@ -632,7 +632,7 @@ if app_mode == "\U0001f3d7\ufe0f \u0645\u0646\u0634\u0626 \u0635\u0641\u062d\u06
                         for i, p in enumerate(prompts):
                             status.text(f"جاري توليد {p['id']}... ({i+1}/{len(prompts)})")
                             try:
-                                img_data = generate_nb_image(global_api_key, p['prompt'])
+                                img_data = generate_nb_image(global_api_key, f"Product: {global_product_name}. Section: {p['section']}. Generate: {p['prompt']}. Style: professional commercial photo, high quality, 8k.")
                                 if img_data:
                                     generated[p['id']] = img_data
                             except Exception as e:
