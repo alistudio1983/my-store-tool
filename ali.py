@@ -749,7 +749,7 @@ def generate_nb_image(api_key, prompt, ref_b64=None):
         else:
             contents = prompt
         resp = client.models.generate_content(
-            model='gemini-2.5-flash-preview-image-generation',
+            model='gemini-2.5-flash-image',
             contents=contents,
             config=gt.GenerateContentConfig(response_modalities=['TEXT','IMAGE'])
         )
