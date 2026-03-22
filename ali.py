@@ -4,789 +4,981 @@ import json
 import streamlit.components.v1 as components
 import re
 import pandas as pd
-import requests
 import random
 import urllib.parse
 import base64
 import time
 
-st.set_page_config(page_title="ALI Engine Pro - AI Landing Pages", layout="wide", page_icon="\U0001f680")
+st.set_page_config(page_title="ALI Engine Pro", layout="wide", page_icon="🚀")
+st.markdown("""<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+html,body,[data-testid="stAppViewContainer"],[data-testid="stSidebar"]{font-family:'Cairo',sans-serif!important;direction:rtl;text-align:right;background:#f8fafc;}
+.main-header{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:40px 20px;border-radius:20px;text-align:center;margin-bottom:35px;border-bottom:5px solid #3b82f6;}
+.main-header h1{font-weight:900;font-size:3rem;background:linear-gradient(to right,#93c5fd,#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.main-header p{color:#94a3b8;font-size:1.2rem;font-weight:600;}
+.stButton>button{background:linear-gradient(135deg,#2563eb,#3b82f6)!important;color:#fff!important;font-weight:800!important;font-size:1.1rem!important;border:none!important;border-radius:12px!important;padding:15px 30px!important;width:100%;}
+</style>""", unsafe_allow_html=True)
+st.markdown('<div class="main-header"><h1>ALI Growth Engine Pro 🚀</h1><p>منصة العمليات التسويقية | 15 قسم | +30 صورة AI</p></div>', unsafe_allow_html=True)
 
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stSidebar"] {
-        font-family: 'Cairo', sans-serif !important; direction: rtl; text-align: right; background-color: #f8fafc;
+# ─── HELPERS ──────────────────────────────────────────────────────────────────
+
+def get_ai_image(keyword, width=800, height=600, style="product", context=""):
+    safe = str(keyword).strip() or "product"
+    pm = {
+        "product":     f"{safe} product photo white background studio lighting professional 8k",
+        "lifestyle":   f"lifestyle photography person using {safe} natural warm setting authentic 8k",
+        "problem":     f"frustrated person problem {safe} worried expression dramatic lighting realistic 8k",
+        "solution":    f"happy satisfied person using {safe} bright smile positive natural lighting 8k",
+        "feature":     f"visual representation {context} {safe} circular composition white background commercial 8k",
+        "ingredient":  f"close up macro {safe} natural organic ingredient studio white background 8k",
+        "gif_step":    f"hands tutorial step using {safe} clean demonstration bright lighting instructional 8k",
+        "review":      f"close up headshot portrait real person face neutral background soft lighting 8k",
+        "doctor":      f"professional arab doctor white coat hospital confident smile realistic 8k",
+        "family":      f"happy arab family group {safe} warm home lighting authentic 8k",
+        "hero_person": f"confident arab person using {safe} cinematic lighting editorial photography 8k",
+        "composite":   f"{safe} product dark dramatic background studio lighting commercial photography 8k",
+        "before":      f"clear BEFORE state without {safe} problem visible high quality 8k",
+        "after":       f"clear AFTER state {safe} problem solved dramatic improvement 8k",
+        "dimensions":  f"{safe} product flat lay ruler measurement size reference clean white background 8k",
     }
-    .main-header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 40px 20px; border-radius: 20px; text-align: center; margin-bottom: 35px; box-shadow: 0 20px 40px -10px rgba(15,23,42,0.3); border-bottom: 5px solid #3b82f6; }
-    .main-header h1 { font-weight: 900; font-size: 3rem; margin-bottom: 5px; background: linear-gradient(to right, #93c5fd, #ffffff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .main-header p { color: #94a3b8; font-size: 1.2rem; font-weight: 600; }
-    .stButton > button { background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important; color: white !important; font-weight: 800 !important; font-size: 1.1rem !important; border: none !important; border-radius: 12px !important; padding: 15px 30px !important; width: 100%; }
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown('<div class="main-header"><h1>ALI Growth Engine Pro \U0001f680</h1><p>\u0645\u0646\u0635\u0629 \u0627\u0644\u0639\u0645\u0644\u064a\u0627\u062a \u0627\u0644\u062a\u0633\u0648\u064a\u0642\u064a\u0629 \u0627\u0644\u0645\u062a\u0643\u0627\u0645\u0644\u0629 | \u0635\u0648\u0631 AI \u0639\u0627\u0644\u064a\u0629 \u0627\u0644\u062c\u0648\u062f\u0629</p></div>', unsafe_allow_html=True)
-
-def get_ai_image(keyword, width=800, height=600, style="professional", context=""):
-    safe_keyword = str(keyword).strip()
-    if not safe_keyword or safe_keyword.lower() == "none":
-        safe_keyword = "product"
-    prompts = {
-        "product": f"{safe_keyword} product photo white background studio",
-        "person": f"{safe_keyword} portrait natural light realistic",
-        "before_after": f"realistic before and after comparison photo of {safe_keyword}, high quality, clear difference, professional photography",
-        "lifestyle": f"lifestyle photography of person using {safe_keyword}, natural setting, warm lighting, authentic, high quality, 8k",
-        "ingredient": f"close up macro photography of {safe_keyword}, natural organic ingredient, studio lighting, white background, 8k, detailed texture",
-        "dimensions": f"product dimensions diagram of {safe_keyword}, measurement overlay, clean white background, professional product photo with size reference, 8k",
-        "gif_step": f"step by step tutorial photo showing how to use {safe_keyword}, clean hands demonstration, bright lighting, instructional photography, 8k",
-        "problem": f"frustrated person experiencing problem related to {safe_keyword}, worried expression, dramatic lighting, realistic, high quality, 8k",
-        "solution": f"happy satisfied person after using {safe_keyword}, bright smile, positive mood, natural lighting, high quality, 8k",
-        "feature": f"visual representation of {context} for {safe_keyword}, conceptual product benefit illustration, clean modern aesthetic, commercial photography, 8k",
-        "review": f"{safe_keyword}, close up headshot portrait photo of a real person face, front facing, natural skin texture, neutral background, soft lighting, professional portrait photography, 8k",
-    }
-    prompt = prompts.get(style, f"{safe_keyword} high quality realistic photo")
-    encoded_prompt = urllib.parse.quote(prompt)
+    prompt = pm.get(style, f"{safe} high quality realistic commercial photo 8k")
     seed = random.randint(1, 999999)
-    return f"https://image.pollinations.ai/prompt/{encoded_prompt}?width={width}&height={height}&nologo=true&nofeed=true&model=flux&seed={seed}"
+    return f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt)}?width={width}&height={height}&nologo=true&nofeed=true&model=flux&seed={seed}"
 
 AUTO_COLORS = {
-    "cosmetics": {"primary": "#0f766e", "secondary": "#f0fdfa", "accent": "#eab308", "gradient1": "#0f766e", "gradient2": "#14b8a6"},
-    "skincare": {"primary": "#be185d", "secondary": "#fdf2f8", "accent": "#f59e0b", "gradient1": "#be185d", "gradient2": "#ec4899"},
-    "health": {"primary": "#15803d", "secondary": "#f0fdf4", "accent": "#f97316", "gradient1": "#15803d", "gradient2": "#22c55e"},
-    "gadgets": {"primary": "#1e3a5f", "secondary": "#f0f4f8", "accent": "#ef4444", "gradient1": "#1e3a5f", "gradient2": "#3b82f6"},
-    "fashion": {"primary": "#7c2d12", "secondary": "#fef3c7", "accent": "#d97706", "gradient1": "#7c2d12", "gradient2": "#ea580c"},
-    "default": {"primary": "#1e40af", "secondary": "#eff6ff", "accent": "#f59e0b", "gradient1": "#1e40af", "gradient2": "#3b82f6"}
+    "skincare":  {"primary":"#be185d","secondary":"#fdf2f8","accent":"#f59e0b","gradient1":"#be185d","gradient2":"#ec4899"},
+    "cosmetics": {"primary":"#0f766e","secondary":"#f0fdfa","accent":"#eab308","gradient1":"#0f766e","gradient2":"#14b8a6"},
+    "health":    {"primary":"#15803d","secondary":"#f0fdf4","accent":"#f97316","gradient1":"#15803d","gradient2":"#22c55e"},
+    "gadgets":   {"primary":"#1e3a5f","secondary":"#f0f4f8","accent":"#ef4444","gradient1":"#1e3a5f","gradient2":"#3b82f6"},
+    "fashion":   {"primary":"#7c2d12","secondary":"#fef3c7","accent":"#d97706","gradient1":"#7c2d12","gradient2":"#ea580c"},
+    "default":   {"primary":"#1e40af","secondary":"#eff6ff","accent":"#f59e0b","gradient1":"#1e40af","gradient2":"#3b82f6"},
 }
 
-def detect_colors(product_name, category):
-    text = (product_name + " " + category).lower()
-    if any(w in text for w in ["cream", "\u0643\u0631\u064a\u0645", "collagen", "\u0643\u0648\u0644\u0627\u062c\u064a\u0646", "serum", "\u0633\u064a\u0631\u0648\u0645", "cosmetic", "\u062a\u062c\u0645\u064a\u0644"]):
-        return AUTO_COLORS["skincare"]
-    elif any(w in text for w in ["skin", "\u0628\u0634\u0631\u0629", "face", "\u0648\u062c\u0647", "beauty", "\u062c\u0645\u0627\u0644"]):
-        return AUTO_COLORS["cosmetics"]
-    elif any(w in text for w in ["health", "\u0635\u062d\u0629", "vitamin", "\u0641\u064a\u062a\u0627\u0645\u064a\u0646", "supplement", "\u0645\u0643\u0645\u0644"]):
-        return AUTO_COLORS["health"]
-    elif any(w in text for w in ["gadget", "\u062c\u0647\u0627\u0632", "device", "\u0623\u062f\u0627\u0629", "smart", "\u0630\u0643\u064a"]):
-        return AUTO_COLORS["gadgets"]
-    elif any(w in text for w in ["fashion", "\u0645\u0648\u0636\u0629", "clothes", "\u0645\u0644\u0627\u0628\u0633"]):
-        return AUTO_COLORS["fashion"]
-    elif "cosmetics" in text.lower() or "Cosmetics" in category:
-        return AUTO_COLORS["cosmetics"]
-    else:
-        return AUTO_COLORS["default"]
+def detect_colors(name, cat):
+    t = (name+" "+cat).lower()
+    if any(w in t for w in ["cream","كريم","collagen","كولاجين","serum","سيروم"]): return AUTO_COLORS["skincare"]
+    if any(w in t for w in ["skin","بشرة","beauty","جمال","cosmetic","تجميل"]):    return AUTO_COLORS["cosmetics"]
+    if any(w in t for w in ["health","صحة","vitamin","فيتامين","supplement"]):     return AUTO_COLORS["health"]
+    if any(w in t for w in ["gadget","جهاز","device","smart","glasses","نظارة"]):  return AUTO_COLORS["gadgets"]
+    if any(w in t for w in ["fashion","موضة","clothes","ملابس"]):                  return AUTO_COLORS["fashion"]
+    return AUTO_COLORS["default"]
 
-def get_fast_working_model(api_key):
-    if 'valid_model_name' in st.session_state:
-        return st.session_state.valid_model_name
+def get_model(api_key):
+    if 'model_name' in st.session_state: return st.session_state.model_name
     genai.configure(api_key=api_key, transport="rest")
     try:
         for m in genai.list_models():
             if 'generateContent' in m.supported_generation_methods and 'flash' in m.name.lower():
-                st.session_state.valid_model_name = m.name
-                return m.name
-    except:
-        pass
-    st.session_state.valid_model_name = "gemini-pro"
-    return "gemini-pro"
+                st.session_state.model_name = m.name; return m.name
+    except: pass
+    st.session_state.model_name = "gemini-pro"; return "gemini-pro"
 
-def generate_landing_page_json(api_key, product, category):
+# ─── JSON GENERATION ──────────────────────────────────────────────────────────
+
+def generate_lp_json(api_key, product, category):
     genai.configure(api_key=api_key, transport="rest")
-    model_name = get_fast_working_model(api_key)
-    model = genai.GenerativeModel(model_name)
+    model = genai.GenerativeModel(get_model(api_key))
     prompt = f"""
-\u0623\u0646\u062a \u062e\u0628\u064a\u0631 Copywriter \u0644\u0635\u0641\u062d\u0627\u062a \u0627\u0644\u0647\u0628\u0648\u0637.
-\u0627\u0644\u0645\u0646\u062a\u062c: "{product}". \u0627\u0644\u0641\u0626\u0629: "{category}".
-\u0627\u0644\u0646\u0635\u0648\u0635 \u0628\u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0627\u0644\u0641\u0635\u062d\u0649.
-\u0627\u0644\u062d\u0642\u0648\u0644 \u0627\u0644\u0645\u0646\u062a\u0647\u064a\u0629 \u0628\u0640 _search \u0647\u064a \u0643\u0644\u0645\u0627\u062a \u0628\u0627\u0644\u0625\u0646\u062c\u0644\u064a\u0632\u064a\u0629 \u0644\u062a\u0648\u0644\u064a\u062f \u0635\u0648\u0631 AI \u062a\u0643\u0648\u0646 \u0645\u0646\u0627\u0633\u0628\u0629 \u0644\u0644\u0646\u0635 \u0627\u0644\u0645\u062c\u0627\u0648\u0631.
-\u0631\u062f \u0628\u0635\u064a\u063a\u0629 JSON \u0635\u0627\u0644\u062d\u0629:
+أنت خبير Copywriter. المنتج: "{product}". الفئة: "{category}".
+النصوص عربية فصحى. حقول _search هي كلمات إنجليزية دقيقة لتوليد صور AI (6-10 كلمات).
+رد بـ JSON صالح فقط:
 {{
-    "hero_headline": "\u0639\u0646\u0648\u0627\u0646 \u0631\u0626\u064a\u0633\u064a \u064a\u062e\u0637\u0641 \u0627\u0644\u0627\u0646\u062a\u0628\u0627\u0647",
-    "hero_subheadline": "\u0639\u0646\u0648\u0627\u0646 \u0641\u0631\u0639\u064a",
-    "image_hero_search": "detailed english description of the exact product in hero section, 5-8 words minimum",
-    "image_hero_lifestyle_search": "detailed english description of lifestyle photo showing person using this exact product",
-    "image_hero_closeup_search": "english keyword close up detail of product",
-    "trust_badges": ["\u0634\u062d\u0646 \u0645\u062c\u0627\u0646\u064a", "\u0627\u0644\u062f\u0641\u0639 \u0639\u0646\u062f \u0627\u0644\u0627\u0633\u062a\u0644\u0627\u0645", "\u0636\u0645\u0627\u0646 30 \u064a\u0648\u0645"],
-    "social_proof_number": "+12,000",
-    "social_proof_text": "\u0639\u0645\u064a\u0644 \u0633\u0639\u064a\u062f",
-    "problem_title": "\u0639\u0646\u0648\u0627\u0646 \u0642\u0633\u0645 \u0627\u0644\u0623\u0644\u0645",
-    "problem_description": "\u0641\u0642\u0631\u0629 \u062a\u0635\u0641 \u0627\u0644\u0625\u062d\u0628\u0627\u0637",
-    "problem_points": ["\u0645\u0634\u0643\u0644\u0629 1", "\u0645\u0634\u0643\u0644\u0629 2", "\u0645\u0634\u0643\u0644\u0629 3"],
-    "image_problem_search": "detailed english description showing the EXACT problem described above, 5-8 words minimum",
-    "image_problem_2_search": "english keyword second problem visual",
-    "solution_title": "\u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u062d\u0644",
-    "solution_description": "\u0641\u0642\u0631\u0629 \u0627\u0644\u062d\u0644",
-    "image_solution_search": "detailed english description matching the EXACT solution described above, 5-8 words",
-    "image_solution_2_search": "english keyword second solution visual",
-    "image_before_search": "english keyword before",
-    "image_after_search": "english keyword after",
-    "features": [
-        {{"title": "\u0645\u064a\u0632\u0629 1", "desc": "\u0627\u0644\u0641\u0627\u0626\u062f\u0629", "icon": "sparkles", "image_search": "detailed 5-8 word description that EXACTLY represents this specific feature title and description"}},
-        {{"title": "\u0645\u064a\u0632\u0629 2", "desc": "\u0627\u0644\u0641\u0627\u0626\u062f\u0629", "icon": "shield", "image_search": "detailed 5-8 word description matching this specific feature"}},
-        {{"title": "\u0645\u064a\u0632\u0629 3", "desc": "\u0627\u0644\u0641\u0627\u0626\u062f\u0629", "icon": "heart", "image_search": "detailed 5-8 word description matching this feature benefit"}},
-        {{"title": "\u0645\u064a\u0632\u0629 4", "desc": "\u0627\u0644\u0641\u0627\u0626\u062f\u0629", "icon": "check", "image_search": "detailed 5-8 word description matching this feature advantage"}}
-    ],
-    "ingredients": [
-        {{"name": "\u0645\u0643\u0648\u0646 1", "benefit": "\u0641\u0627\u0626\u062f\u062a\u0647", "image_search": "the EXACT ingredient name as raw natural ingredient close up photo"}},
-        {{"name": "\u0645\u0643\u0648\u0646 2", "benefit": "\u0641\u0627\u0626\u062f\u062a\u0647", "image_search": "the EXACT ingredient name as raw natural ingredient close up photo"}},
-        {{"name": "\u0645\u0643\u0648\u0646 3", "benefit": "\u0641\u0627\u0626\u062f\u062a\u0647", "image_search": "the EXACT ingredient name as raw natural ingredient close up photo"}}
-    ],
-    "how_to_use": ["\u062e\u0637\u0648\u0629 1", "\u062e\u0637\u0648\u0629 2", "\u062e\u0637\u0648\u0629 3"],
-    "how_to_use_images": ["detailed description of step 1 ACTION being performed", "detailed description of step 2 ACTION", "detailed description of step 3 ACTION"],
-    "dimensions": {{"height": "15 cm", "width": "8 cm", "weight": "200g", "volume": "50ml", "image_search": "product with ruler measurement"}},
-    "stats": [{{"number": "98%", "label": "\u0625\u062d\u0635\u0627\u0626\u064a\u0629 1"}}, {{"number": "+5000", "label": "\u0625\u062d\u0635\u0627\u0626\u064a\u0629 2"}}, {{"number": "4.9/5", "label": "\u0625\u062d\u0635\u0627\u0626\u064a\u0629 3"}}],
-    "reviews": [
-        {{"name": "\u0633\u0627\u0631\u0629 \u0645.", "rating": 5, "comment": "\u062a\u0639\u0644\u064a\u0642 \u0648\u0627\u0642\u0639\u064a", "image_search": "close up face portrait of happy arab woman, headshot, natural skin, neutral background"}},
-        {{"name": "\u0623\u062d\u0645\u062f \u0639.", "rating": 5, "comment": "\u062a\u0639\u0644\u064a\u0642 \u0648\u0627\u0642\u0639\u064a", "image_search": "close up face portrait of confident arab man, headshot, natural skin, neutral background"}},
-        {{"name": "\u0646\u0648\u0631\u0629 \u0643.", "rating": 4, "comment": "\u062a\u0639\u0644\u064a\u0642 \u0648\u0627\u0642\u0639\u064a", "image_search": "close up face portrait of smiling arab woman, headshot, natural skin, neutral background"}}
-    ],
-    "pricing": {{"original": "399", "discounted": "199", "currency": "SAR", "discount_percent": "50%"}},
-    "urgency_text": "\u0627\u0644\u0639\u0631\u0636 \u064a\u0646\u062a\u0647\u064a \u062e\u0644\u0627\u0644 24 \u0633\u0627\u0639\u0629!",
-    "countdown_hours": 24,
-    "faq": [
-        {{"q": "\u0645\u062a\u0649 \u0633\u0623\u0644\u0627\u062d\u0638 \u0627\u0644\u0646\u062a\u0627\u0626\u062c\u061f", "a": "\u0625\u062c\u0627\u0628\u0629"}},
-        {{"q": "\u0647\u0644 \u0627\u0644\u0645\u0646\u062a\u062c \u0622\u0645\u0646\u061f", "a": "\u0625\u062c\u0627\u0628\u0629"}},
-        {{"q": "\u0643\u064a\u0641 \u0623\u0637\u0644\u0628\u061f", "a": "\u0625\u062c\u0627\u0628\u0629"}},
-        {{"q": "\u0645\u0627 \u0633\u064a\u0627\u0633\u0629 \u0627\u0644\u0625\u0631\u062c\u0627\u0639\u061f", "a": "\u0625\u062c\u0627\u0628\u0629"}}
-    ],
-    "guarantee_title": "\u0636\u0645\u0627\u0646 \u0627\u0633\u062a\u0631\u062c\u0627\u0639 \u0627\u0644\u0645\u0627\u0644",
-    "guarantee_text": "\u0646\u0635 \u0627\u0644\u0636\u0645\u0627\u0646",
-    "call_to_action": "\u0627\u0637\u0644\u0628 \u0627\u0644\u0622\u0646",
-    "footer_text": "\u062c\u0645\u064a\u0639 \u0627\u0644\u062d\u0642\u0648\u0642 \u0645\u062d\u0641\u0648\u0638\u0629"
+  "hero_headline": "عنوان رئيسي قوي",
+  "hero_subheadline": "عنوان فرعي داعم",
+  "image_hero_person_search": "confident arab person using exact product cinematic 8k",
+  "image_hero_product_search": "exact product isolated dark dramatic studio lighting 8k",
+  "image_hero_lifestyle_search": "lifestyle person using product natural warm setting wide shot 8k",
+  "trust_badges": ["شحن مجاني","الدفع عند الاستلام","ضمان 30 يوم","دعم 24/7"],
+  "social_proof_number": "+12,000",
+  "social_proof_text": "عميل سعيد",
+  "problem_title": "عنوان المشكلة",
+  "problem_description": "فقرة تصف الإحباط بعمق",
+  "problem_points": ["مشكلة تفصيلية 1","مشكلة تفصيلية 2","مشكلة تفصيلية 3"],
+  "image_problem_1_search": "frustrated person exact problem worried realistic dramatic lighting 8k",
+  "image_problem_2_search": "visual second aspect of the problem close up realistic 8k",
+  "solution_title": "عنوان الحل",
+  "solution_description": "فقرة الحل التفصيلية",
+  "image_solution_1_search": "happy person after solving problem with product natural lighting 8k",
+  "image_solution_2_search": "product in use showing solution benefit close up 8k",
+  "image_before_search": "clear BEFORE state without product problem visible dramatic 8k",
+  "image_after_search": "clear AFTER state with product problem solved improvement 8k",
+  "doctors": [
+    {{"name": "د. اسم طبيب 1","title": "استشاري تخصص مناسب","quote": "اقتباس تأييد طبي قوي 2-3 جمل","image_search": "professional arab doctor white coat hospital confident smile pointing 8k"}},
+    {{"name": "د. اسم طبيب 2","title": "خبير تخصص مناسب","quote": "اقتباس تأييد خبير موثوق 2-3 جمل","image_search": "professional arab medical expert white coat laboratory confident 8k"}}
+  ],
+  "family_headline": "يثق بنا الآلاف في المنطقة العربية",
+  "image_family_1_search": "happy arab family group using product together warm home lighting 8k",
+  "image_family_2_search": "group satisfied arab customers smiling holding product diverse ages 8k",
+  "features": [
+    {{"title": "ميزة 1","desc": "فائدة تفصيلية","image_search": "exact visual feature 1 circular white background commercial 8k"}},
+    {{"title": "ميزة 2","desc": "فائدة تفصيلية","image_search": "exact visual feature 2 circular white background commercial 8k"}},
+    {{"title": "ميزة 3","desc": "فائدة تفصيلية","image_search": "exact visual feature 3 circular white background commercial 8k"}},
+    {{"title": "ميزة 4","desc": "فائدة تفصيلية","image_search": "exact visual feature 4 circular white background commercial 8k"}}
+  ],
+  "ingredients": [
+    {{"name": "مكون 1","benefit": "فائدته التفصيلية","image_search": "exact ingredient 1 raw natural macro close up white background 8k"}},
+    {{"name": "مكون 2","benefit": "فائدته التفصيلية","image_search": "exact ingredient 2 raw natural macro close up white background 8k"}},
+    {{"name": "مكون 3","benefit": "فائدته التفصيلية","image_search": "exact ingredient 3 raw natural macro close up white background 8k"}},
+    {{"name": "مكون 4","benefit": "فائدته التفصيلية","image_search": "exact ingredient 4 raw natural macro close up white background 8k"}}
+  ],
+  "how_to_use": ["خطوة 1 تفصيلية","خطوة 2 تفصيلية","خطوة 3 تفصيلية","خطوة 4 تفصيلية"],
+  "how_to_use_images": [
+    "hands demonstrating step 1 action with product close up bright studio 8k",
+    "hands demonstrating step 2 action with product close up bright studio 8k",
+    "hands demonstrating step 3 action with product close up bright studio 8k",
+    "hands demonstrating step 4 action with product close up bright studio 8k"
+  ],
+  "dimensions": {{"height": "15 cm","width": "8 cm","weight": "200g","volume": "50ml","note": "ملاحظة المقاسات"}},
+  "image_dimensions_search": "product flat lay ruler measurement size reference clean white background 8k",
+  "image_dimensions_2_search": "product packaging box dimensions label close up clean background 8k",
+  "stats": [{{"number": "98%","label": "نسبة الرضا"}},{{"number": "+5000","label": "عميل سعيد"}},{{"number": "4.9/5","label": "التقييم"}}],
+  "reviews": [
+    {{"name": "سارة م.","rating": 5,"comment": "تعليق واقعي تفصيلي مقنع","image_search": "close up portrait happy arab woman headshot neutral background soft lighting 8k"}},
+    {{"name": "أحمد ع.","rating": 5,"comment": "تعليق واقعي تفصيلي مقنع","image_search": "close up portrait confident arab man headshot neutral background soft lighting 8k"}},
+    {{"name": "نورة ك.","rating": 5,"comment": "تعليق واقعي تفصيلي مقنع","image_search": "close up portrait smiling arab woman headshot neutral background soft lighting 8k"}}
+  ],
+  "pricing": {{"original": "399","discounted": "199","currency": "SAR","discount_percent": "50%"}},
+  "urgency_text": "⚡ العرض ينتهي خلال 24 ساعة!",
+  "countdown_hours": 24,
+  "faq": [
+    {{"q": "متى سألاحظ النتائج؟","a": "إجابة تفصيلية"}},
+    {{"q": "هل المنتج آمن؟","a": "إجابة تفصيلية"}},
+    {{"q": "كيف أطلب؟","a": "إجابة تفصيلية"}},
+    {{"q": "ما سياسة الإرجاع؟","a": "إجابة تفصيلية"}}
+  ],
+  "guarantee_title": "ضمان استرجاع الأموال 30 يوماً",
+  "guarantee_text": "نص الضمان التفصيلي",
+  "call_to_action": "اطلب الآن",
+  "footer_text": "جميع الحقوق محفوظة"
 }}
 """
-    response = model.generate_content(prompt, request_options={"timeout": 60.0})
-    tb = chr(96) * 3
-    clean_text = re.sub(f'{tb}(?:json|JSON)?', '', response.text, flags=re.IGNORECASE)
-    clean_text = clean_text.replace(tb, '').strip()
-    match = re.search(r'\{.*\}', clean_text, re.DOTALL)
-    if match:
-        return match.group(0)
-    return clean_text
+    r = model.generate_content(prompt, request_options={"timeout": 60.0})
+    tb = chr(96)*3
+    clean = re.sub(f'{tb}(?:json|JSON)?','',r.text,flags=re.IGNORECASE).replace(tb,'').strip()
+    m = re.search(r'\{.*\}', clean, re.DOTALL)
+    return m.group(0) if m else clean
 
-def generate_deep_research(api_key, product_name, category):
+def generate_deep_research(api_key, product, category):
     genai.configure(api_key=api_key, transport="rest")
-    model_name = get_fast_working_model(api_key)
-    model = genai.GenerativeModel(model_name)
-    prompt = f"""
-\u0623\u0646\u062a \u0623\u062f\u0627\u0629 Deep Research.
-\u0627\u0644\u0645\u0646\u062a\u062c: "{product_name}". \u0627\u0644\u0641\u0626\u0629: "{category}".
-\u0623\u062e\u0631\u062c \u062a\u0642\u0631\u064a\u0631\u0627\u064b \u0634\u0627\u0645\u0644\u0627\u064b \u0628\u0627\u0644\u0639\u0631\u0628\u064a\u0629 \u0628\u062a\u0646\u0633\u064a\u0642 Markdown:
-1. \u0648\u062b\u064a\u0642\u0629 \u0634\u062e\u0635\u064a\u0629 \u0627\u0644\u0639\u0645\u064a\u0644 (Avatar Sheet)
-2. \u0648\u062b\u064a\u0642\u0629 \u0628\u062d\u062b \u0627\u0644\u0633\u0648\u0642 \u0648\u0627\u0644\u0645\u0646\u0627\u0641\u0633\u064a\u0646
-3. \u0648\u062b\u064a\u0642\u0629 \u0645\u0644\u062e\u0635 \u0627\u0644\u0639\u0631\u0636 (Offer Brief)
-4. \u0648\u062b\u064a\u0642\u0629 \u0627\u0644\u0645\u0639\u062a\u0642\u062f\u0627\u062a \u0627\u0644\u0636\u0631\u0648\u0631\u064a\u0629
-5. \u0632\u0648\u0627\u064a\u0627 \u0627\u0644\u0628\u064a\u0639 \u0627\u0644\u062c\u0627\u0647\u0632\u0629 (PAS + FAB)
-"""
-    response = model.generate_content(prompt, request_options={"timeout": 60.0})
-    return response.text
+    model = genai.GenerativeModel(get_model(api_key))
+    r = model.generate_content(
+        f'أنت Deep Research. المنتج: "{product}". الفئة: "{category}".\nأخرج تقريراً شاملاً بالعربية Markdown:\n1. Avatar Sheet\n2. بحث السوق والمنافسين\n3. Offer Brief\n4. المعتقدات الضرورية\n5. زوايا البيع PAS+FAB',
+        request_options={"timeout":60.0})
+    return r.text
 
-def build_landing_page_html(data, colors):
-    p = colors["primary"]
-    s = colors["secondary"]
-    a = colors["accent"]
-    g1 = colors["gradient1"]
-    g2 = colors["gradient2"]
+# ─── IMAGE SLOTS ──────────────────────────────────────────────────────────────
 
-    hero_img = get_ai_image(data.get('image_hero_search', 'product'), 500, 500, 'product')
-    hero_lifestyle = get_ai_image(data.get('image_hero_lifestyle_search', 'person using product'), 400, 300, 'lifestyle')
-    prob_img = get_ai_image(data.get('image_problem_search', 'worried person'), 400, 300, 'problem')
-    sol_img = get_ai_image(data.get('image_solution_search', 'happy person'), 400, 300, 'solution')
-    before_img = get_ai_image(data.get('image_before_search', 'before treatment'), 350, 350, 'problem')
-    after_img = get_ai_image(data.get('image_after_search', 'after treatment'), 350, 350, 'solution')
+def extract_image_slots(data):
+    slots = []
+    pn = data.get('_product_name','')
+    def add(key, section, keyword, itype, context=""):
+        pm = {
+            "product":    f"{keyword} product photo white background studio 8k",
+            "lifestyle":  f"lifestyle person using {keyword} natural warm authentic 8k",
+            "problem":    f"frustrated person problem {keyword} worried dramatic realistic 8k",
+            "solution":   f"happy person after using {keyword} bright smile positive 8k",
+            "feature":    f"visual {context} {keyword} circular white background commercial 8k",
+            "ingredient": f"macro {keyword} natural organic studio white background 8k",
+            "gif_step":   f"hands tutorial {keyword} clean demonstration bright 8k",
+            "review":     f"headshot portrait real person face neutral background soft lighting 8k",
+            "doctor":     f"professional doctor white coat hospital confident smile 8k",
+            "family":     f"happy arab family group {keyword} warm home authentic 8k",
+            "hero_person":f"confident arab person {keyword} cinematic editorial 8k",
+            "composite":  f"{keyword} product dark dramatic studio commercial 8k",
+            "before":     f"BEFORE state {keyword} problem visible high quality 8k",
+            "after":      f"AFTER state {keyword} problem solved improvement 8k",
+            "dimensions": f"{keyword} product flat lay ruler measurement white background 8k",
+        }
+        prompt = pm.get(itype, f"{keyword} commercial photo 8k")
+        if pn: prompt = f"Product: {pn}. {prompt}"
+        slots.append({"key":key,"section":section,"keyword":keyword,"prompt":prompt,"type":itype,"context":context})
 
-    pricing = data.get('pricing', {})
-    cta = data.get('call_to_action', 'اطلب الآن')
-    countdown_hours = data.get('countdown_hours', 24)
+    # HERO (3)
+    add("IMG_HERO_PERSON",    "hero",           data.get('image_hero_person_search','arab person'),       "hero_person")
+    add("IMG_HERO_PRODUCT",   "hero",           data.get('image_hero_product_search','product'),          "composite")
+    add("IMG_HERO_LIFESTYLE", "hero",           data.get('image_hero_lifestyle_search','lifestyle'),       "lifestyle")
+    # PROBLEM (2)
+    add("IMG_PROB_1",         "problem",        data.get('image_problem_1_search','problem person'),      "problem")
+    add("IMG_PROB_2",         "problem",        data.get('image_problem_2_search','problem visual'),      "problem")
+    # SOLUTION (2)
+    add("IMG_SOL_1",          "solution",       data.get('image_solution_1_search','happy person'),       "solution")
+    add("IMG_SOL_2",          "solution",       data.get('image_solution_2_search','product use'),        "product")
+    # BEFORE/AFTER (2)
+    add("IMG_BEFORE",         "before_after",   data.get('image_before_search','before'),                 "before")
+    add("IMG_AFTER",          "before_after",   data.get('image_after_search','after'),                   "after")
+    # DOCTORS (2)
+    for i, doc in enumerate(data.get('doctors',[])[:2], 1):
+        add(f"IMG_DOC_{i}", "doctors", doc.get('image_search','doctor'), "doctor")
+    # FAMILY (2)
+    add("IMG_FAM_1",          "family",         data.get('image_family_1_search','family'),               "family")
+    add("IMG_FAM_2",          "family",         data.get('image_family_2_search','customers'),            "family")
+    # FEATURES (4)
+    for i, f in enumerate(data.get('features',[])[:4], 1):
+        add(f"IMG_FEAT_{i}", "features", f.get('image_search','feature'), "feature",
+            context=f"{f.get('title','')} {f.get('desc','')}")
+    # INGREDIENTS (4)
+    for i, ing in enumerate(data.get('ingredients',[])[:4], 1):
+        add(f"IMG_ING_{i}", "ingredients", ing.get('image_search','ingredient'), "ingredient")
+    # STEPS (4)
+    step_imgs = data.get('how_to_use_images',[])
+    for i in range(min(4, len(step_imgs))):
+        add(f"IMG_STEP_{i+1}", "steps", step_imgs[i], "gif_step")
+    # DIMENSIONS (2)
+    add("IMG_DIM_1",          "dimensions",     data.get('image_dimensions_search','product dimensions'), "dimensions")
+    add("IMG_DIM_2",          "dimensions",     data.get('image_dimensions_2_search','product packaging'),"product")
+    # REVIEWS (3)
+    for i, rev in enumerate(data.get('reviews',[])[:3], 1):
+        add(f"IMG_REV_{i}", "reviews", rev.get('image_search','person portrait'), "review")
+    return slots
 
-    badges = data.get('trust_badges', [])
-    badges_html = ''.join(f'<div class="badge-item"><span>✅</span> {b}</div>' for b in badges)
+# ─── HTML BUILDER ─────────────────────────────────────────────────────────────
 
-    problems_html = ''.join(f'<div class="pain-point">❌ {pt}</div>' for pt in data.get('problem_points', []))
+def build_lp_html(data, colors, image_map=None):
+    p=colors["primary"]; s=colors["secondary"]; a=colors["accent"]
+    g1=colors["gradient1"]; g2=colors["gradient2"]
 
-    features_html = ''
-    for feat in data.get('features', [])[:4]:
-        feat_img = get_ai_image(feat.get('image_search', 'feature'), 300, 300, 'feature', context=f"{feat.get('title','')} {feat.get('desc','')}")
-        features_html += f'''<div class="feat-card">
-            <img loading="lazy" decoding="async" src="{feat_img}" alt="{feat.get('title','')}">
-            <h4>{feat.get('title','')}</h4>
-            <p>{feat.get('desc','')}</p>
-        </div>'''
+    def img(key, kw, w, h, st_, ctx=""):
+        if image_map and key in image_map: return image_map[key]
+        return get_ai_image(kw, w, h, st_, ctx)
 
-    ingredients_html = ''
-    for ing in data.get('ingredients', [])[:3]:
-        ing_img = get_ai_image(ing.get('image_search', 'ingredient'), 200, 200, 'ingredient')
-        ingredients_html += f'''<div class="ing-card">
-            <img loading="lazy" decoding="async" src="{ing_img}" alt="{ing.get('name','')}">
-            <h4>{ing.get('name','')}</h4>
-            <p>{ing.get('benefit','')}</p>
-        </div>'''
+    # ── All images ──
+    hero_person    = img("IMG_HERO_PERSON",   data.get('image_hero_person_search','person'),        600,700,"hero_person")
+    hero_product   = img("IMG_HERO_PRODUCT",  data.get('image_hero_product_search','product'),      500,500,"composite")
+    hero_lifestyle = img("IMG_HERO_LIFESTYLE",data.get('image_hero_lifestyle_search','lifestyle'),  800,350,"lifestyle")
+    prob1          = img("IMG_PROB_1",        data.get('image_problem_1_search','problem'),         500,380,"problem")
+    prob2          = img("IMG_PROB_2",        data.get('image_problem_2_search','problem2'),        500,380,"problem")
+    sol1           = img("IMG_SOL_1",         data.get('image_solution_1_search','solution'),       500,380,"solution")
+    sol2           = img("IMG_SOL_2",         data.get('image_solution_2_search','solution2'),      500,380,"product")
+    before_img     = img("IMG_BEFORE",        data.get('image_before_search','before'),             450,320,"before")
+    after_img      = img("IMG_AFTER",         data.get('image_after_search','after'),               450,320,"after")
+    fam1           = img("IMG_FAM_1",         data.get('image_family_1_search','family'),           500,380,"family")
+    fam2           = img("IMG_FAM_2",         data.get('image_family_2_search','customers'),        500,380,"family")
+    dim1           = img("IMG_DIM_1",         data.get('image_dimensions_search','dimensions'),     500,400,"dimensions")
+    dim2           = img("IMG_DIM_2",         data.get('image_dimensions_2_search','packaging'),    400,300,"product")
 
-    reviews_html = ''
-    for rev in data.get('reviews', [])[:3]:
-        stars = '⭐' * int(rev.get('rating', 5))
-        rev_img = get_ai_image(rev.get('image_search', 'person'), 200, 200, 'review')
-        reviews_html += f'''<div class="review-card">
-            <div class="rev-top">
-                <img loading="lazy" decoding="async" src="{rev_img}" class="rev-avatar">
-                <div class="rev-info"><strong>{rev.get('name','')}</strong><div class="stars">{stars}</div></div>
-            </div>
-            <p class="rev-text">"{rev.get('comment','')}"</p>
-            <span class="verified-badge">✅ مشتري موثق</span>
-        </div>'''
+    badges   = data.get('trust_badges',[])
+    pricing  = data.get('pricing',{})
+    cta      = data.get('call_to_action','اطلب الآن')
+    cdh      = data.get('countdown_hours',24)
+    dims     = data.get('dimensions',{})
 
-    faq_html = ''
-    for faq in data.get('faq', [])[:4]:
-        faq_html += f'''<details class="faq-item">
-            <summary>▸ {faq.get('q','')}</summary>
-            <p>{faq.get('a','')}</p>
-        </details>'''
+    tb_badges = ''.join(f'<span class="tb-b">✅ {b}</span>' for b in badges[:4])
+    probs_html= ''.join(f'<div class="pain"><span>❌</span>{pt}</div>' for pt in data.get('problem_points',[]))
+    stats_html= ''.join(f'<div class="stat-box"><div class="sn">{st__.get("number","")}</div><div class="sl">{st__.get("label","")}</div></div>' for st__ in data.get('stats',[])[:3])
 
+    # DOCTORS
+    docs_html = ''
+    for i, doc in enumerate(data.get('doctors',[])[:2], 1):
+        di = img(f"IMG_DOC_{i}", doc.get('image_search','doctor'), 300, 380, "doctor")
+        docs_html += f'''<div class="doc-card">
+<img loading="lazy" src="{di}" alt="{doc.get('name','')}">
+<div class="doc-info">
+  <div class="doc-name">{doc.get('name','')}</div>
+  <div class="doc-title">{doc.get('title','')}</div>
+  <div class="doc-quote"><span class="qm">"</span>{doc.get('quote','')}<span class="qm">"</span></div>
+</div></div>'''
+
+    # FEATURES
+    feats_html = ''
+    for i, f in enumerate(data.get('features',[])[:4], 1):
+        fi = img(f"IMG_FEAT_{i}", f.get('image_search','feature'), 300, 300, "feature",
+                 context=f"{f.get('title','')} {f.get('desc','')}")
+        feats_html += f'''<div class="feat-card">
+<div class="feat-circle"><img loading="lazy" src="{fi}" alt="{f.get('title','')}"></div>
+<h4>{f.get('title','')}</h4><p>{f.get('desc','')}</p></div>'''
+
+    # INGREDIENTS
+    ings_html = ''
+    for i, ing in enumerate(data.get('ingredients',[])[:4], 1):
+        ii = img(f"IMG_ING_{i}", ing.get('image_search','ingredient'), 300, 300, "ingredient")
+        ings_html += f'''<div class="ing-card">
+<img loading="lazy" src="{ii}" alt="{ing.get('name','')}">
+<h4>{ing.get('name','')}</h4><p>{ing.get('benefit','')}</p></div>'''
+
+    # STEPS
     steps_html = ''
-    step_images = data.get('how_to_use_images', [])
-    for i, step in enumerate(data.get('how_to_use', [])[:3], 1):
-        step_kw = step_images[i-1] if i-1 < len(step_images) else f'step {i}'
-        step_img = get_ai_image(step_kw, 300, 250, 'gif_step', context=step)
+    step_imgs  = data.get('how_to_use_images',[])
+    for i, step in enumerate(data.get('how_to_use',[])[:4], 1):
+        sk = step_imgs[i-1] if i-1 < len(step_imgs) else f'step {i}'
+        si = img(f"IMG_STEP_{i}", sk, 400, 300, "gif_step", context=step)
         steps_html += f'''<div class="step-card">
-            <div class="step-num">{i}</div>
-            <img loading="lazy" decoding="async" src="{step_img}" alt="خطوة {i}">
-            <p>{step}</p>
-        </div>'''
+<img loading="lazy" src="{si}" alt="خطوة {i}">
+<div class="step-num">{i}</div>
+<p class="step-txt">{step}</p></div>'''
 
-    stats_html = ''
-    for stat in data.get('stats', [])[:3]:
-        stats_html += f'<div class="stat-box"><div class="stat-num">{stat.get("number","")}</div><div class="stat-label">{stat.get("label","")}</div></div>'
+    # REVIEWS
+    revs_html = ''
+    for i, rev in enumerate(data.get('reviews',[])[:3], 1):
+        ri = img(f"IMG_REV_{i}", rev.get('image_search','person'), 250, 250, "review")
+        stars = '⭐'*int(rev.get('rating',5))
+        revs_html += f'''<div class="rev-card">
+<div class="rev-top">
+  <img loading="lazy" src="{ri}" class="rev-av">
+  <div><strong>{rev.get('name','')}</strong><div class="stars">{stars}</div></div>
+</div>
+<p class="rev-txt">"{rev.get('comment','')}"</p>
+<span class="vbadge">✅ مشتري موثق</span></div>'''
 
-    html = f'''<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
-<style>
+    # FAQ
+    faq_html = ''.join(f'<details class="faq-item"><summary>▸ {f.get("q","")}</summary><p>{f.get("a","")}</p></details>' for f in data.get('faq',[])[:4])
+
+    css = f"""
 *{{margin:0;padding:0;box-sizing:border-box;}}
 body{{font-family:'Cairo',sans-serif;background:#fff;color:#1a1a2e;direction:rtl;}}
 img{{max-width:100%;height:auto;display:block;}}
-.topbar{{background:linear-gradient(135deg,{g1},{g2});color:#fff;text-align:center;padding:12px 10px;position:sticky;top:0;z-index:999;}}
-.topbar .offer-text{{font-weight:900;font-size:1.1rem;margin-bottom:6px;}}
-.topbar .timer-row{{display:flex;justify-content:center;align-items:center;gap:15px;flex-wrap:wrap;font-size:0.9rem;}}
-.topbar .timer-box{{background:rgba(0,0,0,0.25);padding:6px 14px;border-radius:8px;font-weight:700;font-size:1.3rem;min-width:50px;text-align:center;}}
-.topbar .trust-icons{{display:flex;justify-content:center;gap:20px;margin-top:8px;font-size:0.85rem;opacity:0.95;}}
-.container{{max-width:680px;margin:0 auto;padding:0 15px;}}
-.hero{{background:linear-gradient(180deg,{s} 0%,#fff 100%);padding:30px 15px 20px;text-align:center;}}
-.hero h1{{font-size:1.6rem;font-weight:900;color:{p};line-height:1.4;margin-bottom:10px;}}
-.hero .sub{{font-size:1rem;color:#555;margin-bottom:15px;line-height:1.6;}}
-.hero-img{{border-radius:16px;margin:0 auto 15px;max-width:350px;box-shadow:0 8px 30px rgba(0,0,0,0.12);}}
-.badge-row{{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:15px 0;}}
-.badge-item{{background:#f0fdf4;border:1px solid #bbf7d0;padding:6px 14px;border-radius:20px;font-size:0.85rem;font-weight:600;color:#166534;}}
-.social-proof{{background:{a};color:#fff;text-align:center;padding:14px;font-size:1.1rem;font-weight:700;border-radius:12px;margin:15px auto;max-width:350px;}}
-.btn-cta{{display:block;background:linear-gradient(135deg,{a},#f59e0b);color:#fff;padding:16px 30px;border-radius:14px;font-weight:900;font-size:1.2rem;text-decoration:none;text-align:center;max-width:400px;margin:20px auto;box-shadow:0 6px 20px {a}55;border:none;cursor:pointer;transition:transform 0.2s;}}
-.btn-cta:hover{{transform:translateY(-2px);}}
-.section{{padding:35px 15px;}}
-.section-title{{font-size:1.5rem;font-weight:900;color:{p};text-align:center;margin-bottom:20px;line-height:1.4;}}
-.section-dark{{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;padding:35px 15px;}}
-.section-dark .section-title{{color:#fff;}}
-.pain-point{{background:#fef2f2;border-right:4px solid #ef4444;padding:12px 16px;margin-bottom:10px;border-radius:8px;font-size:0.95rem;color:#991b1b;}}
-.solution-row{{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:20px;}}
-.solution-row img{{flex:1;min-width:200px;border-radius:14px;}}
-.solution-row .text-side{{flex:1;min-width:220px;}}
-.ba-section{{text-align:center;}}
-.ba-grid{{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin:20px 0;}}
-.ba-card{{text-align:center;flex:1;min-width:140px;}}
-.ba-card img{{border-radius:14px;border:3px solid #e5e7eb;margin-bottom:8px;}}
-.ba-card.before img{{border-color:#ef4444;}}
-.ba-card.after img{{border-color:#22c55e;}}
-.ba-label{{font-weight:900;font-size:1.1rem;padding:6px 20px;border-radius:20px;display:inline-block;}}
-.ba-arrow{{font-size:2rem;color:{a};font-weight:900;}}
-.feat-grid{{display:grid;grid-template-columns:1fr 1fr;gap:15px;}}
-.feat-card{{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 15px rgba(0,0,0,0.08);text-align:center;}}
-.feat-card img{{width:100%;height:160px;object-fit:cover;}}
-.feat-card h4{{color:{p};padding:10px 10px 0;font-size:0.95rem;}}
-.feat-card p{{padding:0 10px 12px;font-size:0.85rem;color:#666;}}
-.ing-grid{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}}
-.ing-card{{text-align:center;background:{s};border-radius:14px;padding:15px 8px;}}
-.ing-card img{{width:80px;height:80px;border-radius:50%;margin:0 auto 8px;object-fit:cover;}}
-.ing-card h4{{font-size:0.9rem;color:{p};}}
-.ing-card p{{font-size:0.8rem;color:#666;}}
-.steps-grid{{display:flex;gap:15px;flex-wrap:wrap;justify-content:center;}}
-.step-card{{flex:1;min-width:180px;max-width:220px;text-align:center;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.06);}}
-.step-num{{background:linear-gradient(135deg,{g1},{g2});color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;margin:12px auto 8px;}}
-.step-card img{{width:100%;height:130px;object-fit:cover;}}
-.step-card p{{padding:10px;font-size:0.85rem;}}
-.stats-row{{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin:20px 0;}}
-.stat-box{{text-align:center;min-width:100px;}}
-.stat-num{{font-size:1.8rem;font-weight:900;color:{a};}}
-.stat-label{{font-size:0.85rem;color:rgba(255,255,255,0.85);}}
-.reviews-grid{{display:flex;gap:15px;flex-wrap:wrap;justify-content:center;}}
-.review-card{{background:#fff;border-radius:14px;padding:16px;min-width:200px;flex:1;max-width:300px;box-shadow:0 4px 15px rgba(0,0,0,0.06);}}
-.rev-top{{display:flex;align-items:center;gap:10px;margin-bottom:10px;}}
-.rev-avatar{{width:80px;height:80px;border-radius:50%;object-fit:cover;}}
-.rev-info strong{{display:block;font-size:0.9rem;}}
-.stars{{color:#f59e0b;font-size:0.85rem;}}
-.rev-text{{font-size:0.9rem;color:#444;font-style:italic;margin-bottom:8px;}}
-.verified-badge{{background:#f0fdf4;color:#166534;font-size:0.75rem;padding:3px 10px;border-radius:10px;}}
-.pricing-box{{text-align:center;background:linear-gradient(135deg,{s},#fff);padding:30px 15px;border-radius:20px;margin:20px auto;max-width:400px;box-shadow:0 8px 30px rgba(0,0,0,0.1);}}
-.old-price{{font-size:1.3rem;color:#999;text-decoration:line-through;}}
-.new-price{{font-size:2.2rem;font-weight:900;color:{p};}}
-.discount-tag{{background:#ef4444;color:#fff;padding:4px 14px;border-radius:20px;font-size:0.85rem;font-weight:700;display:inline-block;margin-top:8px;}}
-.faq-item{{border-bottom:1px solid #e5e7eb;padding:14px 0;}}
-.faq-item summary{{font-weight:700;cursor:pointer;font-size:1rem;color:{p};}}
-.faq-item p{{padding:10px 0;color:#555;font-size:0.9rem;}}
-.guarantee-box{{text-align:center;background:#f0fdf4;border:2px solid #22c55e;border-radius:16px;padding:25px;margin:20px auto;max-width:500px;}}
-.final-cta{{text-align:center;background:linear-gradient(135deg,{g1},{g2});padding:40px 15px;color:#fff;}}
-@media(max-width:600px){{.feat-grid{{grid-template-columns:1fr;}}.ing-grid{{grid-template-columns:1fr 1fr;}}.ba-grid{{flex-direction:column;}}}}
-</style>
-</head>
-<body>
-<!-- TOPBAR -->
-<div class="topbar">
-<div class="offer-text">{data.get('urgency_text','')}</div>
-<div class="timer-row"><div class="timer-box" id="cd-hours">00</div><span>:</span><div class="timer-box" id="cd-mins">00</div><span>:</span><div class="timer-box" id="cd-secs">00</div></div>
-<div class="trust-icons">{badges_html}</div>
-</div>
-<!-- HERO -->
-<div class="hero">
-<div class="container">
-<h1>{data.get('hero_headline','')}</h1>
-<p class="sub">{data.get('hero_subheadline','')}</p>
-<img loading="lazy" decoding="async" src="{hero_img}" alt="product" class="hero-img">
-<div class="badge-row">{badges_html}</div>
-<div class="social-proof">{data.get('social_proof_number','')} {data.get('social_proof_text','')}</div>
-<a href="#order" class="btn-cta">{cta} &#10140;</a>
-</div>
-</div>
-<!-- STATS -->
-<div class="section-dark"><div class="container"><div class="stats-row">{stats_html}</div></div></div>
-<!-- PROBLEM -->
-<div class="section"><div class="container">
-<h2 class="section-title">{data.get('problem_title','')}</h2>
-<div class="solution-row"><img loading="lazy" decoding="async" src="{prob_img}" alt="problem"><div class="text-side"><p>{data.get('problem_description','')}</p>{problems_html}</div></div>
-</div></div>
-<!-- SOLUTION -->
-<div class="section" style="background:{s};"><div class="container">
-<h2 class="section-title">{data.get('solution_title','')}</h2>
-<div class="solution-row"><div class="text-side"><p>{data.get('solution_description','')}</p></div><img loading="lazy" decoding="async" src="{sol_img}" alt="solution"></div>
-</div></div>
-<!-- BEFORE AFTER -->
-<div class="section ba-section"><div class="container">
-<h2 class="section-title">&#10024; &#1578;&#1581;&#1608;&#1604; &#1605;&#1584;&#1607;&#1604;!</h2>
-<div class="ba-grid">
-<div class="ba-card before"><img loading="lazy" decoding="async" src="{before_img}" alt="before"><div class="ba-label" style="background:#fef2f2;color:#ef4444;">&#1602;&#1576;&#1604;</div></div>
-<div class="ba-arrow">&#10145;</div>
-<div class="ba-card after"><img loading="lazy" decoding="async" src="{after_img}" alt="after"><div class="ba-label" style="background:#f0fdf4;color:#22c55e;">&#1576;&#1593;&#1583;</div></div>
-</div>
-<a href="#order" class="btn-cta">{cta} &#10140;</a>
-</div></div>
-<!-- FEATURES -->
-<div class="section"><div class="container">
-<h2 class="section-title">&#1604;&#1605;&#1575;&#1584;&#1575; &#1607;&#1584;&#1575; &#1575;&#1604;&#1605;&#1606;&#1578;&#1580; &#1605;&#1582;&#1578;&#1604;&#1601;&#1567;</h2>
-<div class="feat-grid">{features_html}</div>
-</div></div>
-<!-- INGREDIENTS -->
-<div class="section" style="background:{s};"><div class="container">
-<h2 class="section-title">&#1575;&#1604;&#1587;&#1585; &#1601;&#1610; &#1605;&#1603;&#1608;&#1606;&#1575;&#1578;&#1606;&#1575;</h2>
-<div class="ing-grid">{ingredients_html}</div>
-</div></div>
-<!-- HOW TO USE -->
-<div class="section"><div class="container">
-<h2 class="section-title">&#1603;&#1610;&#1601; &#1578;&#1587;&#1578;&#1582;&#1583;&#1605;&#1607;&#1567;</h2>
-<div class="steps-grid">{steps_html}</div>
-</div></div>
-<!-- REVIEWS -->
-<div class="section-dark"><div class="container">
-<h2 class="section-title">&#1570;&#1585;&#1575;&#1569; &#1575;&#1604;&#1593;&#1605;&#1604;&#1575;&#1569;</h2>
-<div class="reviews-grid">{reviews_html}</div>
-</div></div>
-<!-- PRICING -->
-<div class="section" id="order"><div class="container">
-<div class="pricing-box">
-<h2 class="section-title">&#1575;&#1581;&#1589;&#1604; &#1593;&#1604;&#1610;&#1607; &#1575;&#1604;&#1570;&#1606;!</h2>
-<div class="old-price">{pricing.get('original','')} {pricing.get('currency','')}</div>
-<div class="new-price">{pricing.get('discounted','')} {pricing.get('currency','')}</div>
-<div class="discount-tag">&#1582;&#1589;&#1605; {pricing.get('discount_percent','')}</div>
-<a href="#" class="btn-cta" style="margin-top:20px;">{cta} &#10140;</a>
-</div>
-</div></div>
-<!-- FAQ -->
-<div class="section"><div class="container">
-<h2 class="section-title">&#1575;&#1604;&#1571;&#1587;&#1574;&#1604;&#1577; &#1575;&#1604;&#1588;&#1575;&#1574;&#1593;&#1577;</h2>
-{faq_html}
-</div></div>
-<!-- GUARANTEE -->
-<div class="section"><div class="container">
-<div class="guarantee-box">
-<h3>{data.get('guarantee_title','')}</h3>
-<p>{data.get('guarantee_text','')}</p>
-</div>
-</div></div>
-<!-- FINAL CTA -->
-<div class="final-cta">
-<div class="container">
-<h2 style="font-size:1.5rem;margin-bottom:15px;">&#1604;&#1575; &#1578;&#1601;&#1608;&#1578; &#1607;&#1584;&#1575; &#1575;&#1604;&#1593;&#1585;&#1590;!</h2>
-<a href="#order" class="btn-cta" style="background:#fff;color:{p};">{cta} &#10140;</a>
-<p style="margin-top:15px;font-size:0.85rem;opacity:0.8;">{data.get('footer_text','')}</p>
-</div>
-</div>
-<script>
-(function(){{
-var hrs={countdown_hours};
-var key='cd_end_'+document.title;
-var end=localStorage.getItem(key);
-if(!end){{end=Date.now()+hrs*3600000;localStorage.setItem(key,end);}}
-function tick(){{
-var left=Math.max(0,end-Date.now());
-var h=Math.floor(left/3600000);var m=Math.floor((left%3600000)/60000);var s=Math.floor((left%60000)/1000);
-var pad=function(n){{return n<10?'0'+n:n;}};
-if(document.getElementById('cd-hours')){{document.getElementById('cd-hours').textContent=pad(h);document.getElementById('cd-mins').textContent=pad(m);document.getElementById('cd-secs').textContent=pad(s);}}
-if(left>0)setTimeout(tick,1000);
-}}
-tick();
-}})();
-</script>
-</body></html>'''
+a{{text-decoration:none;}}
+.cnt{{max-width:680px;margin:0 auto;padding:0 15px;}}
 
+/* TOPBAR */
+.topbar{{background:linear-gradient(135deg,{g1},{g2});color:#fff;text-align:center;padding:10px;position:sticky;top:0;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.35);}}
+.topbar .ot{{font-weight:900;font-size:1rem;margin-bottom:6px;}}
+.tr{{display:flex;justify-content:center;align-items:center;gap:8px;margin-bottom:7px;}}
+.tb{{background:rgba(0,0,0,.3);padding:5px 12px;border-radius:8px;font-weight:900;font-size:1.4rem;min-width:46px;text-align:center;border:1px solid rgba(255,255,255,.25);}}
+.ts{{font-size:1.4rem;font-weight:900;}}
+.tbb{{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;}}
+.tb-b{{background:rgba(255,255,255,.15);padding:3px 10px;border-radius:20px;font-size:.78rem;font-weight:600;}}
+
+/* HERO */
+.hero{{background:linear-gradient(180deg,#0d0d1a,#1a1a2e 55%,{g1});overflow:hidden;}}
+.hero-top{{display:flex;align-items:flex-end;justify-content:space-between;max-width:680px;margin:0 auto;padding:25px 15px 0;gap:10px;}}
+.hero-txt{{flex:1;color:#fff;padding-bottom:15px;}}
+.hero-txt h1{{font-size:1.6rem;font-weight:900;line-height:1.35;margin-bottom:10px;text-shadow:0 2px 10px rgba(0,0,0,.5);}}
+.hero-txt .sub{{font-size:.88rem;color:rgba(255,255,255,.85);margin-bottom:14px;line-height:1.6;}}
+.hero-person{{flex:0 0 190px;max-width:190px;border-radius:16px 16px 0 0;height:310px;object-fit:cover;box-shadow:-8px 0 25px rgba(0,0,0,.45);}}
+.hero-bgs{{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;}}
+.hbg{{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#fff;padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:600;}}
+.hero-sp{{background:{a};color:#fff;text-align:center;padding:11px;font-size:.95rem;font-weight:700;border-radius:12px;max-width:300px;margin:12px auto;}}
+.hero-product-row{{display:flex;justify-content:center;align-items:center;gap:15px;padding:15px;background:rgba(0,0,0,.2);}}
+.hero-prod-img{{width:160px;border-radius:14px;filter:drop-shadow(0 8px 20px rgba(0,0,0,.6));}}
+.hero-lifestyle{{width:100%;max-height:200px;object-fit:cover;}}
+
+/* CTA */
+.btn{{display:block;background:linear-gradient(135deg,{a},#f59e0b);color:#fff;padding:15px 30px;border-radius:14px;font-weight:900;font-size:1.15rem;text-align:center;max-width:400px;margin:18px auto;box-shadow:0 8px 25px {a}66;border:2px solid rgba(255,255,255,.25);transition:transform .2s;}}
+.btn:hover{{transform:translateY(-3px);}}
+
+/* SECTIONS */
+.sec{{padding:35px 15px;}}
+.sec-dark{{background:linear-gradient(135deg,#0d0d1a,#1a1a2e);color:#fff;padding:35px 15px;}}
+.sec-color{{background:linear-gradient(135deg,{s},#fff);padding:35px 15px;}}
+.sec-title{{font-size:1.45rem;font-weight:900;color:{p};text-align:center;margin-bottom:20px;line-height:1.4;}}
+.sec-dark .sec-title{{color:#fff;}}
+
+/* STATS */
+.stats{{display:flex;justify-content:center;gap:25px;flex-wrap:wrap;}}
+.stat-box{{text-align:center;}}
+.sn{{font-size:2rem;font-weight:900;color:{a};}}
+.sl{{font-size:.78rem;color:rgba(255,255,255,.8);margin-top:3px;}}
+
+/* PROBLEM / SOLUTION */
+.two-col{{display:flex;gap:18px;align-items:center;flex-wrap:wrap;}}
+.two-col img{{flex:1;min-width:200px;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,.1);}}
+.two-col .tc-text{{flex:1;min-width:200px;}}
+.pain{{background:#fef2f2;border-right:4px solid #ef4444;padding:11px 14px;margin-bottom:9px;border-radius:0 10px 10px 0;font-size:.88rem;color:#991b1b;display:flex;align-items:center;gap:8px;}}
+.img-pair{{display:flex;gap:12px;margin-top:15px;}}
+.img-pair img{{flex:1;border-radius:12px;min-width:0;}}
+
+/* BEFORE/AFTER */
+.ba-wrap{{position:relative;display:flex;max-width:600px;margin:20px auto;border-radius:18px;overflow:hidden;box-shadow:0 12px 35px rgba(0,0,0,.45);}}
+.ba-card{{flex:1;position:relative;}}
+.ba-card img{{width:100%;height:260px;object-fit:cover;}}
+.ba-lbl{{position:absolute;top:10px;right:10px;font-weight:900;font-size:.95rem;padding:4px 16px;border-radius:20px;}}
+.ba-before .ba-lbl{{background:#ef4444;color:#fff;}}
+.ba-after .ba-lbl{{background:#22c55e;color:#fff;}}
+.ba-arrow{{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;background:{a};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;z-index:5;box-shadow:0 4px 15px rgba(0,0,0,.4);}}
+
+/* DOCTORS */
+.docs-grid{{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;}}
+.doc-card{{display:flex;gap:15px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.08);padding:0;flex:1;min-width:280px;max-width:640px;border:1px solid {p}22;}}
+.doc-card img{{width:120px;min-width:120px;object-fit:cover;border-radius:0;}}
+.doc-info{{padding:15px 15px 15px 10px;flex:1;}}
+.doc-name{{font-weight:900;font-size:1rem;color:{p};margin-bottom:3px;}}
+.doc-title{{font-size:.8rem;color:#666;margin-bottom:10px;}}
+.doc-quote{{font-size:.88rem;color:#333;line-height:1.6;font-style:italic;background:{s};padding:10px;border-radius:10px;border-right:3px solid {p};}}
+.qm{{font-size:1.5rem;color:{a};line-height:.3;display:inline-block;vertical-align:bottom;}}
+
+/* FAMILY */
+.fam-grid{{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:640px;margin:20px auto;}}
+.fam-img{{border-radius:14px;overflow:hidden;}}
+.fam-img img{{width:100%;height:200px;object-fit:cover;transition:transform .3s;}}
+.fam-img img:hover{{transform:scale(1.03);}}
+
+/* FEATURES */
+.feat-grid{{display:grid;grid-template-columns:1fr 1fr;gap:18px;}}
+.feat-card{{background:#fff;border-radius:16px;padding:20px 15px;text-align:center;box-shadow:0 5px 18px rgba(0,0,0,.07);border:1px solid #f1f5f9;}}
+.feat-circle{{width:110px;height:110px;border-radius:50%;overflow:hidden;margin:0 auto 13px;border:3px solid {p};box-shadow:0 4px 14px {p}33;}}
+.feat-circle img{{width:100%;height:100%;object-fit:cover;}}
+.feat-card h4{{color:{p};font-size:.92rem;font-weight:700;margin-bottom:5px;}}
+.feat-card p{{font-size:.8rem;color:#666;line-height:1.5;}}
+
+/* INGREDIENTS */
+.ing-grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}}
+.ing-card{{text-align:center;background:#fff;border-radius:14px;padding:14px 8px;box-shadow:0 3px 12px rgba(0,0,0,.06);}}
+.ing-card img{{width:80px;height:80px;border-radius:50%;margin:0 auto 8px;object-fit:cover;border:2px solid {a};}}
+.ing-card h4{{font-size:.82rem;color:{p};font-weight:700;}}
+.ing-card p{{font-size:.74rem;color:#666;margin-top:3px;}}
+
+/* STEPS */
+.steps-grid{{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}}
+.step-card{{border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.07);position:relative;}}
+.step-card img{{width:100%;height:160px;object-fit:cover;}}
+.step-num{{position:absolute;top:8px;right:8px;background:linear-gradient(135deg,{g1},{g2});color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.9rem;box-shadow:0 3px 10px rgba(0,0,0,.3);}}
+.step-txt{{padding:10px;font-size:.8rem;color:#333;line-height:1.5;}}
+
+/* DIMENSIONS */
+.dim-grid{{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;}}
+.dim-imgs{{flex:1;min-width:220px;}}
+.dim-imgs img{{border-radius:14px;margin-bottom:10px;box-shadow:0 6px 18px rgba(0,0,0,.1);}}
+.dim-table{{flex:1;min-width:220px;}}
+.dim-row{{display:flex;justify-content:space-between;padding:12px 15px;border-bottom:1px solid #e5e7eb;font-size:.9rem;}}
+.dim-row:last-child{{border-bottom:none;}}
+.dim-row .label{{color:#666;font-weight:600;}}
+.dim-row .value{{color:{p};font-weight:900;}}
+.dim-note{{background:{s};border-radius:12px;padding:12px;margin-top:10px;font-size:.85rem;color:#555;border-right:3px solid {p};}}
+
+/* REVIEWS */
+.revs-grid{{display:flex;gap:15px;flex-wrap:wrap;justify-content:center;}}
+.rev-card{{background:#fff;border-radius:16px;padding:18px;min-width:200px;flex:1;max-width:280px;box-shadow:0 4px 15px rgba(0,0,0,.07);border:1px solid #f1f5f9;}}
+.rev-top{{display:flex;align-items:center;gap:12px;margin-bottom:12px;}}
+.rev-av{{width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid {a};flex-shrink:0;}}
+.rev-top strong{{display:block;font-size:.9rem;}}
+.stars{{color:#f59e0b;font-size:.85rem;margin-top:3px;}}
+.rev-txt{{font-size:.85rem;color:#444;font-style:italic;margin-bottom:10px;line-height:1.6;}}
+.vbadge{{background:#f0fdf4;color:#166534;font-size:.72rem;padding:3px 10px;border-radius:10px;font-weight:600;}}
+
+/* PRICING */
+.price-box{{text-align:center;background:linear-gradient(135deg,{s},#fff);padding:35px 20px;border-radius:20px;max-width:420px;margin:0 auto;box-shadow:0 10px 35px rgba(0,0,0,.1);border:2px solid {p}22;}}
+.old-p{{font-size:1.2rem;color:#999;text-decoration:line-through;}}
+.new-p{{font-size:2.8rem;font-weight:900;color:{p};margin:8px 0;}}
+.dtag{{background:#ef4444;color:#fff;padding:5px 18px;border-radius:20px;font-size:.88rem;font-weight:700;display:inline-block;}}
+.g-row{{display:flex;justify-content:center;gap:18px;margin-top:14px;font-size:.82rem;color:#666;flex-wrap:wrap;}}
+
+/* FAQ */
+.faq-item{{border-bottom:1px solid #e5e7eb;padding:15px 0;}}
+.faq-item summary{{font-weight:700;cursor:pointer;color:{p};font-size:.95rem;list-style:none;}}
+.faq-item p{{padding:10px 0 0;color:#555;font-size:.88rem;line-height:1.6;}}
+
+/* GUARANTEE */
+.gbox{{text-align:center;background:#f0fdf4;border:2px solid #22c55e;border-radius:18px;padding:28px;max-width:500px;margin:0 auto;}}
+.gbox h3{{color:#15803d;font-size:1.15rem;font-weight:900;margin-bottom:8px;}}
+.gbox p{{color:#166534;font-size:.88rem;line-height:1.6;}}
+
+/* FINAL CTA */
+.final{{background:linear-gradient(135deg,{g1},{g2});padding:50px 15px;text-align:center;color:#fff;}}
+.final h2{{font-size:1.55rem;font-weight:900;margin-bottom:10px;}}
+.final p{{color:rgba(255,255,255,.85);margin-bottom:20px;font-size:.92rem;}}
+
+/* RESPONSIVE */
+@media(max-width:600px){{
+  .hero-person{{flex:0 0 150px;max-width:150px;height:250px;}}
+  .hero-txt h1{{font-size:1.25rem;}}
+  .feat-grid{{grid-template-columns:1fr 1fr;}}
+  .ing-grid{{grid-template-columns:1fr 1fr;}}
+  .steps-grid{{grid-template-columns:1fr 1fr;}}
+  .ba-card img{{height:170px;}}
+  .fam-grid{{grid-template-columns:1fr 1fr;}}
+  .doc-card{{flex-direction:column;}}
+  .doc-card img{{width:100%;height:160px;border-radius:14px 14px 0 0;}}
+  .dim-grid{{flex-direction:column;}}
+}}
+"""
+
+    html = f"""<!DOCTYPE html><html lang="ar" dir="rtl"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>{css}</style></head><body>
+
+<!-- S1: TOPBAR -->
+<div class="topbar">
+  <div class="ot">{data.get('urgency_text','')}</div>
+  <div class="tr">
+    <div class="tb" id="cd-h">00</div><span class="ts">:</span>
+    <div class="tb" id="cd-m">00</div><span class="ts">:</span>
+    <div class="tb" id="cd-s">00</div>
+  </div>
+  <div class="tbb">{tb_badges}</div>
+</div>
+
+<!-- S2: HERO -->
+<div class="hero">
+  <div class="hero-top">
+    <div class="hero-txt">
+      <h1>{data.get('hero_headline','')}</h1>
+      <p class="sub">{data.get('hero_subheadline','')}</p>
+      <div class="hero-bgs">{''.join(f'<span class="hbg">✅ {b}</span>' for b in badges[:4])}</div>
+      <div class="hero-sp">👥 {data.get('social_proof_number','')} {data.get('social_proof_text','')}</div>
+      <a href="#order" class="btn">{cta} ➜</a>
+    </div>
+    <img src="{hero_person}" class="hero-person" alt="hero" loading="lazy">
+  </div>
+  <div class="hero-product-row">
+    <img src="{hero_product}" class="hero-prod-img" alt="product" loading="lazy">
+    <div style="color:#fff;flex:1;font-size:.9rem;opacity:.9;line-height:1.7;">{data.get('hero_subheadline','')}</div>
+  </div>
+  <img src="{hero_lifestyle}" class="hero-lifestyle" alt="lifestyle" loading="lazy">
+</div>
+
+<!-- S3: STATS -->
+<div class="sec-dark">
+  <div class="cnt"><div class="stats">{stats_html}</div></div>
+</div>
+
+<!-- S4: PROBLEM -->
+<div class="sec">
+  <div class="cnt">
+    <h2 class="sec-title">{data.get('problem_title','')}</h2>
+    <div class="two-col">
+      <img loading="lazy" src="{prob1}" alt="problem 1">
+      <div class="tc-text">
+        <p style="color:#555;line-height:1.7;margin-bottom:14px;">{data.get('problem_description','')}</p>
+        {probs_html}
+      </div>
+    </div>
+    <div class="img-pair" style="margin-top:15px;">
+      <img loading="lazy" src="{prob2}" alt="problem 2" style="border-radius:12px;">
+    </div>
+  </div>
+</div>
+
+<!-- S5: SOLUTION -->
+<div class="sec-color">
+  <div class="cnt">
+    <h2 class="sec-title">{data.get('solution_title','')}</h2>
+    <div class="two-col">
+      <div class="tc-text">
+        <p style="color:#333;line-height:1.7;font-size:1rem;">{data.get('solution_description','')}</p>
+      </div>
+      <img loading="lazy" src="{sol1}" alt="solution 1">
+    </div>
+    <div class="img-pair" style="margin-top:15px;">
+      <img loading="lazy" src="{sol2}" alt="solution 2" style="border-radius:12px;width:100%;">
+    </div>
+    <a href="#order" class="btn">{cta} ➜</a>
+  </div>
+</div>
+
+<!-- S6: BEFORE / AFTER -->
+<div class="sec-dark">
+  <div class="cnt">
+    <h2 class="sec-title">✨ الفرق واضح — قبل وبعد</h2>
+    <div style="position:relative;">
+      <div class="ba-wrap">
+        <div class="ba-card ba-before">
+          <img loading="lazy" src="{before_img}" alt="before">
+          <div class="ba-lbl">قبل</div>
+        </div>
+        <div class="ba-card ba-after">
+          <img loading="lazy" src="{after_img}" alt="after">
+          <div class="ba-lbl">بعد</div>
+        </div>
+      </div>
+      <div class="ba-arrow">➡</div>
+    </div>
+    <p style="color:rgba(255,255,255,.9);text-align:center;margin-top:15px;font-size:.95rem;">{data.get('solution_title','')}</p>
+  </div>
+</div>
+
+<!-- S7: DOCTORS -->
+<div class="sec-color">
+  <div class="cnt">
+    <h2 class="sec-title">👨‍⚕️ رأي الأطباء والخبراء</h2>
+    <div class="docs-grid">{docs_html}</div>
+    <a href="#order" class="btn" style="margin-top:25px;">{cta} ➜</a>
+  </div>
+</div>
+
+<!-- S8: FAMILY / SOCIAL PROOF -->
+<div class="sec-dark">
+  <div class="cnt">
+    <h2 class="sec-title">{data.get('family_headline','يثق بنا الآلاف')}</h2>
+    <div class="fam-grid">
+      <div class="fam-img"><img loading="lazy" src="{fam1}" alt="family 1"></div>
+      <div class="fam-img"><img loading="lazy" src="{fam2}" alt="family 2"></div>
+    </div>
+  </div>
+</div>
+
+<!-- S9: FEATURES -->
+<div class="sec">
+  <div class="cnt">
+    <h2 class="sec-title">⭐ تحولات & الملمة — لماذا هو مختلف؟</h2>
+    <div class="feat-grid">{feats_html}</div>
+  </div>
+</div>
+
+<!-- S10: INGREDIENTS -->
+<div class="sec-color">
+  <div class="cnt">
+    <h2 class="sec-title">🌿 السر في مكوناتنا الطبيعية</h2>
+    <div class="ing-grid">{ings_html}</div>
+  </div>
+</div>
+
+<!-- S11: HOW TO USE -->
+<div class="sec">
+  <div class="cnt">
+    <h2 class="sec-title">📋 كيف تستخدمه؟ — 4 خطوات بسيطة</h2>
+    <div class="steps-grid">{steps_html}</div>
+    <a href="#order" class="btn" style="margin-top:25px;">{cta} ➜</a>
+  </div>
+</div>
+
+<!-- S12: DIMENSIONS -->
+<div class="sec-color">
+  <div class="cnt">
+    <h2 class="sec-title">📐 أبعاد وحجم المنتج</h2>
+    <div class="dim-grid">
+      <div class="dim-imgs">
+        <img loading="lazy" src="{dim1}" alt="dimensions">
+        <img loading="lazy" src="{dim2}" alt="packaging">
+      </div>
+      <div class="dim-table">
+        <div class="dim-row"><span class="label">الارتفاع</span><span class="value">{dims.get('height','')}</span></div>
+        <div class="dim-row"><span class="label">العرض</span><span class="value">{dims.get('width','')}</span></div>
+        <div class="dim-row"><span class="label">الوزن</span><span class="value">{dims.get('weight','')}</span></div>
+        <div class="dim-row"><span class="label">الحجم</span><span class="value">{dims.get('volume','')}</span></div>
+        {f'<div class="dim-note">{dims.get("note","")}</div>' if dims.get('note') else ''}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- S13: REVIEWS -->
+<div class="sec-dark">
+  <div class="cnt">
+    <h2 class="sec-title">💬 آراء عملائنا الحقيقيين</h2>
+    <div class="revs-grid">{revs_html}</div>
+  </div>
+</div>
+
+<!-- S14: PRICING -->
+<div class="sec" id="order">
+  <div class="cnt">
+    <div class="price-box">
+      <h2 class="sec-title">🛒 احصل عليه الآن!</h2>
+      <div class="old-p">{pricing.get('original','')} {pricing.get('currency','')}</div>
+      <div class="new-p">{pricing.get('discounted','')} {pricing.get('currency','')}</div>
+      <div class="dtag">🔥 خصم {pricing.get('discount_percent','')}</div>
+      <a href="#" class="btn" style="margin-top:22px;">{cta} ➜</a>
+      <div class="g-row"><span>🛡️ ضمان 30 يوم</span><span>🚚 شحن مجاني</span><span>💳 دفع عند الاستلام</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ -->
+<div class="sec">
+  <div class="cnt">
+    <h2 class="sec-title">❓ الأسئلة الشائعة</h2>
+    {faq_html}
+  </div>
+</div>
+
+<!-- GUARANTEE -->
+<div class="sec">
+  <div class="cnt">
+    <div class="gbox">
+      <div style="font-size:3rem;margin-bottom:10px;">🛡️</div>
+      <h3>{data.get('guarantee_title','')}</h3>
+      <p>{data.get('guarantee_text','')}</p>
+    </div>
+  </div>
+</div>
+
+<!-- S15: FINAL CTA -->
+<div class="final">
+  <div class="cnt">
+    <h2>لا تفوّت هذا العرض الاستثنائي!</h2>
+    <p>{data.get('urgency_text','')}</p>
+    <a href="#order" class="btn" style="background:#fff;color:{p};max-width:350px;">{cta} ➜</a>
+    <p style="margin-top:18px;font-size:.78rem;opacity:.55;">{data.get('footer_text','')}</p>
+  </div>
+</div>
+
+<script>(function(){{
+  var hrs={cdh},key='cd_v3',end=parseInt(localStorage.getItem(key)||0);
+  if(!end||end<Date.now()){{end=Date.now()+hrs*3600000;localStorage.setItem(key,end);}}
+  function tick(){{
+    var l=Math.max(0,end-Date.now());
+    var pad=n=>n<10?'0'+n:n;
+    var eh=document.getElementById('cd-h'),em=document.getElementById('cd-m'),es=document.getElementById('cd-s');
+    if(eh)eh.textContent=pad(Math.floor(l/3600000));
+    if(em)em.textContent=pad(Math.floor(l%3600000/60000));
+    if(es)es.textContent=pad(Math.floor(l%60000/1000));
+    if(l>0)setTimeout(tick,1000);
+  }}
+  tick();
+}})();</script>
+</body></html>"""
     return html
+
+# ─── YOUCAN EXPORT ────────────────────────────────────────────────────────────
 
 def get_youcan_html(html):
-    """Convert HTML to YouCan-compatible: inline all CSS, remove scripts/style/head"""
-    import re
-    # 1. Extract CSS rules from <style> block
-    def get_youcan_html(html):
-    """Convert HTML to YouCan-compatible: scoped styles, no scripts, no body/html tags"""
-    import re
-    # 1. Extract the <style> content
-    style_content = ''
-    style_match = re.search(r'<style[^>]*>(.*?)</style>', html, re.DOTALL)
-    if style_match:
-        style_content = style_match.group(1)
-    # 2. Remove global resets that break YouCan
-    style_content = re.sub(r'\*\s*\{[^}]*\}', '', style_content)
-    style_content = re.sub(r'body\s*\{[^}]*\}', '', style_content)
-    style_content = re.sub(r'img\s*\{[^}]*\}', '', style_content)
-    # 3. Scope all CSS rules under .ali-lp wrapper
-    scoped_css = ''
-    for m in re.finditer(r'([.#@][^{]+)\{([^}]+)\}', style_content):
-        selector = m.group(1).strip()
-        rules = m.group(2).strip()
-        if selector.startswith('@'):
-            scoped_css += f'{selector}{{{rules}}}\n'
-        else:
-            scoped_css += f'.ali-lp {selector}{{{rules}}}\n'
-    # 4. Extract body content only
-    body_match = re.search(r'<body[^>]*>(.*?)</body>', html, re.DOTALL)
-    body_content = body_match.group(1) if body_match else html
-    # 5. Remove script tags
-    body_content = re.sub(r'<script[^>]*>.*?</script>', '', body_content, flags=re.DOTALL)
-    # 6. Remove structural tags
-    body_content = re.sub(r'<!DOCTYPE[^>]*>', '', body_content, flags=re.IGNORECASE)
-    body_content = re.sub(r'</?(?:html|head|body)[^>]*>', '', body_content, flags=re.IGNORECASE)
-    body_content = re.sub(r'<meta[^>]*>', '', body_content, flags=re.IGNORECASE)
-    body_content = re.sub(r'<link[^>]*>', '', body_content, flags=re.IGNORECASE)
-    body_content = re.sub(r'<style[^>]*>.*?</style>', '', body_content, flags=re.DOTALL)
-    # 7. Fix data-src
-    body_content = body_content.replace(' data-src="', ' src="')
-    # 8. Add img max-width inside wrapper
-    scoped_css += '.ali-lp img{max-width:100%;height:auto;display:block;}\n'
-    # 9. Wrap everything in scoped container
-    result = f'<style>\n{scoped_css}</style>\n<div class="ali-lp" style="direction:rtl;font-family:\'Cairo\',sans-serif;max-width:680px;margin:0 auto;">\n{body_content.strip()}\n</div>'
-    # 10. Clean up whitespace
-    result = re.sub(r'\n\s*\n\s*\n', '\n\n', result)
-    return result.strip()
-    
-def extract_image_prompts(data):
-    prompts = []
-    idx = [1]
-    def add(section, keyword, img_type, context=""):
-        pid = f"IMG_{idx[0]:02d}_{section.upper()}"
-        prompt = get_ai_image(keyword, 800, 600, img_type, context=context)
-        decoded = urllib.parse.unquote(prompt.split('prompt/')[1].split('?')[0]) if 'prompt/' in prompt else keyword
-        prompts.append({"id": pid, "section": section, "type": img_type, "keyword": keyword, "prompt": decoded})
-        idx[0] += 1
-    add("hero", data.get('image_hero_search','product'), "product")
-    add("hero_lifestyle", data.get('image_hero_lifestyle_search','lifestyle'), "lifestyle")
-    add("hero_closeup", data.get('image_hero_closeup_search','closeup'), "product")
-    add("problem", data.get('image_problem_search','problem'), "problem")
-    add("problem2", data.get('image_problem_2_search','problem2'), "problem")
-    add("solution", data.get('image_solution_search','solution'), "solution")
-    add("solution2", data.get('image_solution_2_search','solution2'), "lifestyle")
-    add("before", data.get('image_before_search','before'), "problem")
-    add("after", data.get('image_after_search','after'), "solution")
-    dims = data.get('dimensions', {})
-    add("dimensions", dims.get('image_search','dimensions'), "dimensions")
-    for i, feat in enumerate(data.get('features', [])[:4], 1):
-        add(f"feature_{i}", feat.get('image_search','feature'), "feature", feat.get('title','') + ' ' + feat.get('desc',''))
-    for i, ing in enumerate(data.get('ingredients', [])[:3], 1):
-        add(f"ingredient_{i}", ing.get('image_search','ingredient'), "ingredient")
-    step_imgs = data.get('how_to_use_images', [])
-    for i in range(min(3, len(step_imgs))):
-        add(f"step_{i+1}", step_imgs[i], "gif_step")
-    for i, rev in enumerate(data.get('reviews', [])[:3], 1):
-        add(f"review_{i}", rev.get('image_search','person'), "review")
-    return prompts
+    sm = re.search(r'<style[^>]*>(.*?)</style>', html, re.DOTALL)
+    style_content = sm.group(1) if sm else ''
+    for pat in [r'\*\s*\{[^}]*\}', r'body\s*\{[^}]*\}', r'img\s*\{[^}]*\}', r'\ba\b\s*\{[^}]*\}']:
+        style_content = re.sub(pat, '', style_content)
+    scoped = ''
+    for m in re.finditer(r'(@media[^{]+\{)(.*?)(\})\s*\}', style_content, re.DOTALL):
+        inner = ''.join(f'.ali-lp {rm.group(1).strip()}{{{rm.group(2).strip()}}}\n'
+                        for rm in re.finditer(r'([^{]+)\{([^}]+)\}', m.group(2)))
+        scoped += f'{m.group(1)}\n{inner}}}\n'
+    for m in re.finditer(r'((?:[.#\w][^{{@]*?))\{{([^}}]+)\}}', style_content):
+        sel = m.group(1).strip(); rules = m.group(2).strip()
+        if not sel or not rules or sel.startswith('@'): continue
+        scoped += f'.ali-lp {sel}{{{rules}}}\n'
+    scoped += '.ali-lp img{max-width:100%;height:auto;display:block;}\n.ali-lp a{text-decoration:none;}\n'
+    bm = re.search(r'<body[^>]*>(.*?)</body>', html, re.DOTALL)
+    body = bm.group(1) if bm else html
+    body = re.sub(r'<script[^>]*>.*?</script>', '', body, flags=re.DOTALL)
+    for pat in [r'<!DOCTYPE[^>]*>', r'</?(?:html|head|body)[^>]*>', r'<meta[^>]*>', r'<link[^>]*>', r'<style[^>]*>.*?</style>']:
+        body = re.sub(pat, '', body, flags=re.DOTALL|re.IGNORECASE)
+    body = body.replace(' data-src="', ' src="')
+    result = f'<style>\n{scoped}</style>\n<div class="ali-lp" style="direction:rtl;font-family:\'Cairo\',sans-serif;max-width:680px;margin:0 auto;">\n{body.strip()}\n</div>'
+    return re.sub(r'\n\s*\n\s*\n', '\n\n', result).strip()
 
-def generate_nb_image(api_key, prompt, aspect_ratio="1:1", ref_image_b64=None):
-    """Generate image using Gemini image generation model"""
+# ─── GEMINI IMAGE GEN ─────────────────────────────────────────────────────────
+
+def generate_nb_image(api_key, prompt, ref_b64=None):
     try:
-        from google import genai as genai_client
-        from google.genai import types as genai_types
-        client = genai_client.Client(api_key=api_key)
-                # Build contents with optional reference image
-        if ref_image_b64:
-            img_bytes = base64.b64decode(ref_image_b64)
-            ref_image_part = genai_types.Part.from_bytes(data=img_bytes, mime_type='image/png')
-            contents_parts = [ref_image_part, f"Using this product image as reference. {prompt}"]
+        from google import genai as gc
+        from google.genai import types as gt
+        client = gc.Client(api_key=api_key)
+        if ref_b64:
+            ref_part = gt.Part.from_bytes(data=base64.b64decode(ref_b64), mime_type='image/png')
+            contents = [ref_part, prompt]
         else:
-            contents_parts = prompt
-        response = client.models.generate_content(
-            model='gemini-2.5-flash-image',
-            contents=contents_parts,
-            config=genai_types.GenerateContentConfig(
-                response_modalities=['TEXT', 'IMAGE']
-            )
+            contents = prompt
+        resp = client.models.generate_content(
+            model='gemini-2.0-flash-preview-image-generation',
+            contents=contents,
+            config=gt.GenerateContentConfig(response_modalities=['TEXT','IMAGE'])
         )
-        if response.candidates:
-            for part in response.candidates[0].content.parts:
-                if hasattr(part, 'inline_data') and part.inline_data:
-                    img_data = part.inline_data.data
-                    b64 = base64.b64encode(img_data).decode('utf-8')
-                    mime = part.inline_data.mime_type or 'image/png'
-                    return f'data:{mime};base64,{b64}'
+        if resp.candidates:
+            for part in resp.candidates[0].content.parts:
+                if hasattr(part,'inline_data') and part.inline_data:
+                    b64 = base64.b64encode(part.inline_data.data).decode('utf-8')
+                    return f'data:{part.inline_data.mime_type or "image/png"};base64,{b64}'
         return None
     except Exception as e:
-        st.warning(f"Image gen failed for: {prompt[:50]}... Error: {str(e)[:100]}")
+        st.warning(f"Image gen error: {str(e)[:150]}")
         return None
 
+# ─── UI ───────────────────────────────────────────────────────────────────────
 
-def generate_all_images(api_key, prompts, progress_bar=None):
-    """Generate all images from prompts list and return dict of id->data_uri"""
-    results = {}
-    total = len(prompts)
-    for i, p in enumerate(prompts):
-        if progress_bar:
-            progress_bar.progress((i + 1) / total, text=f"Generating image {i+1}/{total}: {p['section']}")
-        data_uri = generate_nb_image(api_key, p['prompt'])
-        if data_uri:
-            results[p['id']] = data_uri
-        time.sleep(1)  # Rate limit
-    return results
-
-def replace_images_in_html(html, image_map, prompts):
-    """Replace pollinations.ai URLs in HTML with generated image data URIs"""
-    import re
-    pattern = r'src="(https://image\.pollinations\.ai/[^"]*)"'
-    matches = list(re.finditer(pattern, html))
-    prompt_url_map = {}
-    for p in prompts:
-        prompt_text = p.get('prompt', '')
-        encoded_prompt = urllib.parse.quote(prompt_text)
-        prompt_url_map[encoded_prompt] = p['id']
-    for match in reversed(matches):
-        url = match.group(1)
-        if 'prompt/' in url:
-            url_prompt = url.split('prompt/')[1].split('?')[0]
-            best_pid = None
-            for enc_prompt, pid in prompt_url_map.items():
-                if enc_prompt == url_prompt:
-                    best_pid = pid
-                    break
-            if not best_pid:
-                decoded_url = urllib.parse.unquote(url_prompt)
-                for p in prompts:
-                    if p['prompt'] == decoded_url:
-                        best_pid = p['id']
-                        break
-            if best_pid and best_pid in image_map:
-                html = html[:match.start(1)] + image_map[best_pid] + html[match.end(1):]
-    return html
-    
-
-# UI - Sidebar and Main
 with st.sidebar:
-    st.header("\u2699\ufe0f \u0627\u0644\u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u0639\u0627\u0645\u0629")
-    global_api_key = st.text_input("\U0001f511 Gemini API Key", type="password")
-    global_product_name = st.text_area("\U0001f4e6 \u062a\u0641\u0627\u0635\u064a\u0644 \u0648\u0627\u0633\u0645 \u0627\u0644\u0645\u0646\u062a\u062c", placeholder="\u0645\u062b\u0627\u0644: \u0643\u0631\u064a\u0645 \u0643\u0648\u0644\u0627\u062c\u064a\u0646 \u0643\u0648\u0631\u064a \u0644\u0644\u0628\u0634\u0631\u0629")
-    global_category = st.selectbox("\U0001f4e6 \u0641\u0626\u0629 \u0627\u0644\u0645\u0646\u062a\u062c", ["\U0001f484 \u0645\u0633\u062a\u062d\u0636\u0631\u0627\u062a \u062a\u062c\u0645\u064a\u0644 \u0648\u0639\u0646\u0627\u064a\u0629 (Cosmetics)", "\u2699\ufe0f \u0623\u062f\u0648\u0627\u062a \u0648\u0623\u062c\u0647\u0632\u0629 \u0630\u0643\u064a\u0629 (Gadgets)"])
-    uploaded_product_image = st.file_uploader("📷 صورة المنتج (مرجع لتوليد الصور)", type=["png", "jpg", "jpeg", "webp"])
+    st.header("⚙️ الإعدادات")
+    global_api_key        = st.text_input("🔑 Gemini API Key", type="password")
+    global_product_name   = st.text_area("📦 اسم وتفاصيل المنتج", placeholder="مثال: نظارات رؤية ليلية للقيادة")
+    global_category       = st.selectbox("📁 فئة المنتج", [
+        "💄 مستحضرات تجميل وعناية (Cosmetics)",
+        "⚙️ أدوات وأجهزة ذكية (Gadgets)",
+        "🌿 صحة ومكملات (Health)",
+        "👗 أزياء وموضة (Fashion)"
+    ])
+    uploaded_img = st.file_uploader("📷 صورة المنتج (مرجع AI)", type=["png","jpg","jpeg","webp"])
     product_image_b64 = None
-    if uploaded_product_image:
-        product_image_b64 = base64.b64encode(uploaded_product_image.read()).decode('utf-8')
-        uploaded_product_image.seek(0)
-        st.image(uploaded_product_image, caption="صورة المنتج المرفوعة", use_container_width=True)
+    if uploaded_img:
+        product_image_b64 = base64.b64encode(uploaded_img.read()).decode('utf-8')
+        uploaded_img.seek(0)
+        st.image(uploaded_img, caption="صورة المنتج", use_container_width=True)
     st.markdown("---")
-    st.header("\U0001f6e0\ufe0f \u0627\u062e\u062a\u0631 \u0627\u0644\u0623\u062f\u0627\u0629")
-    app_mode = st.radio("\u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u062a\u062d\u0643\u0645:", ["\U0001f3d7\ufe0f \u0645\u0646\u0634\u0626 \u0635\u0641\u062d\u0627\u062a \u0627\u0644\u0647\u0628\u0648\u0637", "\U0001f50d \u0628\u062d\u062b \u0627\u0644\u0633\u0648\u0642 \u0627\u0644\u0645\u0639\u0645\u0642 (SOP-1)", "\U0001f4b0 \u062d\u0627\u0633\u0628\u0629 \u0627\u0644\u062a\u0639\u0627\u062f\u0644 \u0627\u0644\u0645\u0627\u0644\u064a (Matrix)"])
-    st.markdown("---")
+    app_mode = st.radio("🛠️ الأداة:", [
+        "🏗️ منشئ صفحات الهبوط",
+        "🔍 بحث السوق المعمق (SOP-1)",
+        "💰 حاسبة التعادل المالي (Matrix)"
+    ])
 
-if app_mode == "\U0001f3d7\ufe0f \u0645\u0646\u0634\u0626 \u0635\u0641\u062d\u0627\u062a \u0627\u0644\u0647\u0628\u0648\u0637":
-    start_btn = st.button("\U0001f680 \u062a\u0648\u0644\u064a\u062f \u0635\u0641\u062d\u0629 \u0627\u0644\u0647\u0628\u0648\u0637 (15 \u0642\u0633\u0645 + \u0635\u0648\u0631 AI + \u0639\u062f \u062a\u0646\u0627\u0632\u0644\u064a)")
-    if start_btn:
+# ══════════════════════════════════════════════════════════════════════════════
+# LANDING PAGE BUILDER
+# ══════════════════════════════════════════════════════════════════════════════
+if app_mode == "🏗️ منشئ صفحات الهبوط":
+    cols_info = st.columns(5)
+    cols_info[0].metric("الأقسام","15")
+    cols_info[1].metric("الصور","30+")
+    cols_info[2].metric("أطباء","2")
+    cols_info[3].metric("خطوات الاستخدام","4")
+    cols_info[4].metric("مكونات","4")
+
+    if st.button("🚀 توليد صفحة الهبوط الكاملة (15 قسم + 30 صورة)"):
         if not global_api_key or not global_product_name:
-            st.error("\u0627\u0644\u0631\u062c\u0627\u0621 \u0625\u062f\u062e\u0627\u0644 \u0627\u0644\u0645\u0641\u062a\u0627\u062d \u0648\u0627\u0633\u0645 \u0627\u0644\u0645\u0646\u062a\u062c.")
+            st.error("الرجاء إدخال مفتاح API واسم المنتج.")
         else:
-            with st.spinner("\U0001f916 \u062c\u0627\u0631\u064a \u0628\u0646\u0627\u0621 \u0635\u0641\u062d\u0629 \u0627\u0644\u0647\u0628\u0648\u0637 \u0628\u0640 15 \u0642\u0633\u0645 + \u0635\u0648\u0631 AI + \u0639\u062f \u062a\u0646\u0627\u0632\u0644\u064a..."):
+            with st.spinner("🤖 جاري بناء الصفحة..."):
                 try:
-                    raw_json = generate_landing_page_json(global_api_key, global_product_name, global_category)
-                    try:
-                        parsed_data = json.loads(raw_json)
-                    except json.JSONDecodeError:
-                        fixed = re.sub(r',\s*}', '}', raw_json)
-                        fixed = re.sub(r',\s*]', ']', fixed)
-                        fixed = re.sub(r'(["\d])\s*\n\s*"', r'\1,\n"', fixed)
-                        parsed_data = json.loads(fixed)
-                    st.session_state.parsed_json = parsed_data
-                    auto_colors = detect_colors(global_product_name, global_category)
-                    st.session_state.final_page = build_landing_page_html(parsed_data, auto_colors)
-                    st.success("\U0001f389 \u0627\u0643\u062a\u0645\u0644 \u0627\u0644\u0628\u0646\u0627\u0621! 15 \u0642\u0633\u0645 + \u0635\u0648\u0631 AI + \u0639\u062f \u062a\u0646\u0627\u0632\u0644\u064a \u062a\u0644\u0642\u0627\u0626\u064a")
+                    raw  = generate_lp_json(global_api_key, global_product_name, global_category)
+                    try:    data = json.loads(raw)
+                    except:
+                        fixed = re.sub(r',\s*([}\]])', r'\1', raw)
+                        data  = json.loads(fixed)
+                    data['_product_name'] = global_product_name
+                    colors = detect_colors(global_product_name, global_category)
+                    st.session_state.lp_data    = data
+                    st.session_state.lp_colors  = colors
+                    st.session_state.lp_html    = build_lp_html(data, colors)
+                    st.session_state.pop('lp_ai_images', None)
+                    st.session_state.pop('lp_html_ai',   None)
+                    st.success("🎉 تم! 15 قسم + 30 صورة Pollinations")
                 except Exception as e:
-                    st.error(f"\U0001f6d1 \u062e\u0637\u0623: {str(e)}")
-    if 'final_page' in st.session_state:
-        tab1, tab2, tab3, tab4, tab5 = st.tabs(["\U0001f4f1 \u0627\u0644\u0645\u0639\u0627\u064a\u0646\u0629 \u0627\u0644\u0628\u0635\u0631\u064a\u0629", "\U0001f916 \u062a\u0648\u0644\u064a\u062f \u0627\u0644\u0635\u0648\u0631 AI", "\U0001f4e5 \u062a\u062d\u0645\u064a\u0644 JSON", "\U0001f4e4 YouCan HTML", "🎨 مولد البرومبتات"])
-        with tab1:
-            components.html(st.session_state.final_page, height=4000, scrolling=True)
-        with tab2:
-            if 'parsed_json' in st.session_state:
-                st.markdown("### \U0001f916 توليد الصور بالذكاء الاصطناعي")
-                st.info("اضغط الزر لتوليد جميع الصور تلقائياً باستخدام Gemini وإدراجها في صفحة الهبوط")
-                prompts = extract_image_prompts(st.session_state.parsed_json)
-                if st.button("\U0001f680 توليد جميع الصور وإدراجها تلقائياً", key="gen_ai_imgs"):
-                    if not global_api_key:
-                        st.error("الرجاء إدخال مفتاح Gemini API")
+                    st.error(f"🛑 {str(e)}")
+
+    if 'lp_html' in st.session_state:
+        t1,t2,t3,t4,t5 = st.tabs(["📱 المعاينة","🤖 صور AI","📥 JSON","📤 YouCan","🎨 برومبتات"])
+
+        with t1:
+            preview = st.session_state.get('lp_html_ai', st.session_state.lp_html)
+            st.download_button("⬇️ تحميل HTML", preview, "landing_page.html", "text/html")
+            components.html(preview, height=6000, scrolling=True)
+
+        with t2:
+            st.markdown("### 🤖 توليد الصور بـ Gemini AI ودمجها")
+            if 'lp_data' not in st.session_state:
+                st.warning("ولّد الصفحة أولاً.")
+            else:
+                slots = extract_image_slots(st.session_state.lp_data)
+                c1,c2 = st.columns(2)
+                with c1: use_ref = st.checkbox("استخدام صورة المنتج مرجعاً", value=bool(product_image_b64))
+                with c2: st.metric("إجمالي الصور", len(slots))
+
+                if st.button("🚀 توليد جميع الصور ودمجها في HTML", key="gen_ai"):
+                    if not global_api_key: st.error("أدخل مفتاح API")
                     else:
-                        progress = st.progress(0)
-                        status = st.empty()
+                        prog = st.progress(0); status = st.empty()
                         generated = {}
-                        for i, p in enumerate(prompts):
-                            status.text(f"جاري توليد {p['id']}... ({i+1}/{len(prompts)})")
-                            try:
-                                img_data = generate_nb_image(global_api_key, f"Product: {global_product_name}. Section: {p['section']}. Generate: {p['prompt']}. Style: professional commercial photo, high quality, 8k.", ref_image_b64=product_image_b64)
-                                if img_data:
-                                    generated[p['id']] = img_data
-                            except Exception as e:
-                                st.warning(f"فشل توليد {p['id']}: {str(e)}")
-                            progress.progress((i+1)/len(prompts))
-                        status.text(f"تم توليد {len(generated)}/{len(prompts)} صورة!")
-                        if generated:
-                            st.session_state.generated_images = generated
-                            st.success(f"\u2705 تم توليد {len(generated)} صورة بنجاح!")
-                if 'generated_images' in st.session_state:
-                    st.markdown("#### الصور المولدة:")
-                    cols = st.columns(3)
-                    for i, (pid, img_b64) in enumerate(st.session_state.generated_images.items()):
-                        with cols[i % 3]:
-                                                        st.image(img_b64, caption=pid, use_column_width=True)
-                    html_with_imgs = st.session_state.final_page
-                    import re as _re
-                    html_with_imgs = replace_images_in_html(html_with_imgs, st.session_state.generated_images, prompts) #(r'https://image\.pollinations\.ai/prompt/[^"]+', html_with_imgs)
-                    st.session_state.final_page_ai = html_with_imgs
-                    st.success("تم إدراج الصور في كود HTML بنجاح!")
-                    st.download_button("تحميل HTML مع الصور", html_with_imgs, "landing_page_with_ai_images.html", "text/html")
-        with tab3:
-            if 'parsed_json' in st.session_state:
-                json_str = json.dumps(st.session_state.parsed_json, ensure_ascii=False, indent=2)
-                st.download_button(
-                    label="\U0001f4e5 \u062a\u062d\u0645\u064a\u0644 \u0628\u064a\u0627\u0646\u0627\u062a \u0627\u0644\u0635\u0641\u062d\u0629 (JSON)",
-                    data=json_str,
-                    file_name="landing_page_data.json",
-                    mime="application/json"
-                )
-                st.json(st.session_state.parsed_json)
-            with tab4:
-                            youcan_html = get_youcan_html(st.session_state.get('final_page_ai', st.session_state.final_page))
-            st.info("الكود مقسم حسب الأقسام - انسخ كل قسم والصقه في YouCan")
-            # Split by section comments
-            import re as _re2
-            section_names = {
-                'STYLE': '🎨 الأنماط (CSS)',
-                'TOPBAR': '📌 الشريط العلوي',
-                'HERO': '🏠 القسم الرئيسي (Hero)',
-                'STATS': '📊 الإحصائيات',
-                'PROBLEM': '😟 قسم المشكلة',
-                'SOLUTION': '✅ قسم الحل',
-                'BEFORE_AFTER': '🔄 قبل وبعد',
-                'FEATURES': '⭐ المميزات',
-                'INGREDIENTS': '🧪 المكونات',
-                'HOW_TO_USE': '📋 طريقة الاستخدام',
-                'REVIEWS': '💬 آراء العملاء',
-                'PRICING': '💰 التسعير',
-                'FAQ': '❓ الأسئلة الشائعة',
-                'GUARANTEE': '🛡️ الضمان',
-                'FINAL_CTA': '🚀 الدعوة النهائية',
-                'FOOTER': '📝 التذييل',
+                        ref = product_image_b64 if use_ref else None
+                        for i, slot in enumerate(slots):
+                            status.text(f"⏳ {slot['key']} ({i+1}/{len(slots)})")
+                            img_data = generate_nb_image(
+                                global_api_key,
+                                f"Professional commercial photo. {slot['prompt']}. 8k ultra high quality.",
+                                ref_b64=ref
+                            )
+                            generated[slot['key']] = img_data or get_ai_image(slot['keyword'],800,600,slot['type'])
+                            prog.progress((i+1)/len(slots))
+                            time.sleep(0.4)
+                        status.success(f"✅ {len(generated)} صورة!")
+                        st.session_state.lp_ai_images = generated
+                        new_html = build_lp_html(st.session_state.lp_data, st.session_state.lp_colors, image_map=generated)
+                        st.session_state.lp_html_ai = new_html
+                        st.success("✅ الصور مدمجة في HTML كـ base64!")
+                        st.download_button("⬇️ HTML + صور AI مدمجة", new_html, "lp_ai.html", "text/html")
+
+                if 'lp_ai_images' in st.session_state:
+                    st.markdown("#### 🖼️ الصور المولدة")
+                    cols3 = st.columns(3)
+                    for i,(k,v) in enumerate(st.session_state.lp_ai_images.items()):
+                        with cols3[i%3]:
+                            if v and v.startswith('data:'): st.image(v, caption=k, use_container_width=True)
+                            else: st.caption(f"**{k}**: Pollinations")
+
+        with t3:
+            if 'lp_data' in st.session_state:
+                d = {k:v for k,v in st.session_state.lp_data.items() if k!='_product_name'}
+                js = json.dumps(d, ensure_ascii=False, indent=2)
+                st.download_button("📥 تحميل JSON", js, "lp.json","application/json")
+                st.json(d)
+
+        with t4:
+            src = st.session_state.get('lp_html_ai', st.session_state.lp_html)
+            yc  = get_youcan_html(src)
+            if 'lp_html_ai' in st.session_state:
+                st.success("✅ صور AI مدمجة base64 — جاهز لـ YouCan!")
+            else:
+                st.info("💡 ولّد صور AI أولاً لدمجها.")
+
+            section_map = {
+                'S1':'📌 TOPBAR','S2':'🏠 Hero','S3':'📊 Stats','S4':'😟 المشكلة',
+                'S5':'✅ الحل','S6':'🔄 قبل/بعد','S7':'👨‍⚕️ الأطباء','S8':'👨‍👩‍👧 الثقة',
+                'S9':'⭐ المميزات','S10':'🌿 المكونات','S11':'📋 طريقة الاستخدام',
+                'S12':'📐 الأبعاد','S13':'💬 المراجعات','S14':'💰 التسعير','S15':'🚀 Final CTA',
+                'FAQ':'❓ FAQ','GUARANTEE':'🛡️ الضمان',
             }
-            # Extract style block first
-            style_match = _re2.search(r'(<style>.*?</style>)', youcan_html, _re2.DOTALL)
-            if style_match:
-                with st.expander('🎨 الأنماط (CSS) - انسخ هذا أولاً', expanded=False):
-                    st.code(style_match.group(1), language='html')
-            # Split remaining content by <!-- SECTION --> comments
-            parts = _re2.split(r'(<!--\s*[A-Z_]+\s*-->)', youcan_html)
-            current_section = 'WRAPPER'
+            sm2 = re.search(r'(<style>.*?</style>)', yc, re.DOTALL)
+            if sm2:
+                with st.expander("🎨 CSS (انسخ أولاً)", expanded=False):
+                    st.code(sm2.group(1), language='html')
+            parts = re.split(r'(<!--\s*S\d+[^>]*-->)', yc)
+            cur = 'START'
             for part in parts:
-                comment_match = _re2.match(r'<!--\s*([A-Z_]+)\s*-->', part.strip())
-                if comment_match:
-                    current_section = comment_match.group(1)
-                    continue
+                cm = re.match(r'<!--\s*(S\d+|FAQ|GUARANTEE)', part.strip())
+                if cm: cur = cm.group(1); continue
                 content = part.strip()
-                if not content or content.startswith('<style'):
-                    continue
-                label = section_names.get(current_section, f'📦 {current_section}')
+                if not content or content.startswith('<style'): continue
+                label = section_map.get(cur, f'📦 {cur}')
                 with st.expander(label, expanded=False):
                     st.code(content, language='html')
-            st.markdown('---')
-            st.markdown('### 📥 تحميل الكود كاملاً')
-            st.download_button(label="تحميل YouCan HTML كاملاً", data=youcan_html, file_name="youcan.html", mime="text/html")
-        with tab5:
-                if 'parsed_json' in st.session_state:
-                    prompts = extract_image_prompts(st.session_state.parsed_json)
-                    st.markdown("### 🎨 برومبتات الصور المطلوبة")
-                    st.info("استخدم هذه البرومبتات لتوليد الصور بأداتك الخاصة")
-                    for p in prompts:
-                        with st.expander(f"{p['id']} - {p['section']}"):
-                            st.code(p['prompt'], language='text')
-                            st.caption(f"Type: {p['type']} | Keyword: {p['keyword']}")
-                prompt_df = pd.DataFrame(prompts)
-                csv = prompt_df.to_csv(index=False)
-                st.download_button('Download Prompts CSV', csv, 'image_prompts.csv', 'text/csv')
-    st.markdown("### \U0001f50d \u0627\u0644\u0628\u062d\u062b \u0627\u0644\u0645\u0639\u0645\u0642 \u0641\u064a \u0627\u0644\u0633\u0648\u0642")
-    if st.button("\U0001f9e0 \u0627\u0633\u062a\u062e\u0631\u0627\u062c \u0648\u062b\u0627\u0626\u0642 \u0627\u0644\u0628\u064a\u0639"):
-        if not global_api_key or not global_product_name:
-            st.error("\u0627\u0644\u0631\u062c\u0627\u0621 \u0625\u062f\u062e\u0627\u0644 \u0627\u0644\u0645\u0641\u062a\u0627\u062d \u0648\u0627\u0633\u0645 \u0627\u0644\u0645\u0646\u062a\u062c.")
-        else:
-            with st.spinner("\U0001f575\ufe0f\u200d\u2642\ufe0f \u062c\u0627\u0631\u064a \u0627\u0644\u0628\u062d\u062b..."):
-                try:
-                    result = generate_deep_research(global_api_key, global_product_name, global_category)
-                    st.session_state.research_output = result
-                    st.success("\u2705 \u0627\u0643\u062a\u0645\u0644 \u0627\u0644\u0628\u062d\u062b!")
-                except Exception as e:
-                    st.error(f"\U0001f6d1 {str(e)}")
-    if 'research_output' in st.session_state:
-        st.markdown(st.session_state.research_output)
+            st.download_button("📥 YouCan HTML كامل", yc, "youcan.html","text/html")
 
-elif app_mode == "\U0001f4b0 \u062d\u0627\u0633\u0628\u0629 \u0627\u0644\u062a\u0639\u0627\u062f\u0644 \u0627\u0644\u0645\u0627\u0644\u064a (Matrix)":
-    st.markdown("### \U0001f4b0 \u062d\u0627\u0633\u0628\u0629 \u0646\u0642\u0637\u0629 \u0627\u0644\u062a\u0639\u0627\u062f\u0644")
-    COUNTRIES = {
-        "\u0627\u0644\u0633\u0639\u0648\u062f\u064a\u0629": {"currency": "SAR", "P": 199.0, "C": 85.0, "CPL": 25.0},
-        "\u0627\u0644\u0625\u0645\u0627\u0631\u0627\u062a": {"currency": "AED", "P": 149.0, "C": 60.0, "CPL": 30.0},
-        "\u0627\u0644\u0643\u0648\u064a\u062a": {"currency": "KWD", "P": 19.0, "C": 8.0, "CPL": 2.5},
-        "\u0627\u0644\u0645\u063a\u0631\u0628": {"currency": "MAD", "P": 299.0, "C": 120.0, "CPL": 40.0},
-        "\u0645\u0635\u0631": {"currency": "EGP", "P": 500.0, "C": 200.0, "CPL": 50.0},
-        "\u0623\u062e\u0631\u0649": {"currency": "USD", "P": 50.0, "C": 20.0, "CPL": 5.0},
-    }
-    sel = st.selectbox("\U0001f30d \u0627\u0644\u062f\u0648\u0644\u0629:", list(COUNTRIES.keys()))
-    d = COUNTRIES[sel]
-    c1, c2, c3 = st.columns(3)
-    P = c1.number_input(f"\u0633\u0639\u0631 \u0627\u0644\u0628\u064a\u0639 [{d['currency']}]", value=d["P"])
-    C = c2.number_input(f"\u0627\u0644\u062a\u0643\u0644\u0641\u0629 [{d['currency']}]", value=d["C"])
-    CPL = c3.number_input(f"CPL [{d['currency']}]", value=d["CPL"])
-    c4, c5 = st.columns(2)
-    CR = c4.slider("CR %", 10, 100, 60) / 100
-    DR = c5.slider("DR %", 10, 100, 55) / 100
-    margin = P - C
-    max_cpl = margin * CR * DR
-    profit = max_cpl - CPL
-    m1, m2, m3 = st.columns(3)
-    m1.metric("\u0647\u0627\u0645\u0634 \u0627\u0644\u0631\u0628\u062d", f"{margin:.2f} {d['currency']}")
-    m2.metric("\u0623\u0642\u0635\u0649 CPL", f"{max_cpl:.2f} {d['currency']}")
-    if profit >= 0:
-        m3.metric("\u0627\u0644\u062d\u0627\u0644\u0629", "\u2705 \u0631\u0627\u0628\u062d", f"+{profit:.2f}")
-    else:
-        m3.metric("\u0627\u0644\u062d\u0627\u0644\u0629", "\U0001f6a8 \u062e\u0627\u0633\u0631", f"{profit:.2f}")
+        with t5:
+            if 'lp_data' in st.session_state:
+                slots = extract_image_slots(st.session_state.lp_data)
+                st.markdown(f"### 🎨 {len(slots)} برومبت صورة")
+                for slot in slots:
+                    with st.expander(f"🖼️ {slot['key']} — {slot['section']}"):
+                        st.code(slot['prompt'])
+                        st.caption(f"Type: {slot['type']} | Keyword: {slot['keyword']}")
+                st.download_button("📥 CSV", pd.DataFrame(slots).to_csv(index=False), "prompts.csv","text/csv")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SOP-1
+# ══════════════════════════════════════════════════════════════════════════════
+elif app_mode == "🔍 بحث السوق المعمق (SOP-1)":
+    st.markdown("### 🔍 البحث العميق في السوق")
+    if st.button("🧠 استخراج وثائق البيع"):
+        if not global_api_key or not global_product_name:
+            st.error("أدخل مفتاح API واسم المنتج.")
+        else:
+            with st.spinner("جاري البحث..."):
+                try:
+                    res = generate_deep_research(global_api_key, global_product_name, global_category)
+                    st.session_state.deep_res = res
+                    st.success("✅ اكتمل!")
+                except Exception as e:
+                    st.error(f"🛑 {str(e)}")
+    if 'deep_res' in st.session_state:
+        st.markdown(st.session_state.deep_res)
+        st.download_button("📥 تحميل التقرير", st.session_state.deep_res, "deep_research.md","text/markdown")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MATRIX
+# ══════════════════════════════════════════════════════════════════════════════
+elif app_mode == "💰 حاسبة التعادل المالي (Matrix)":
+    st.markdown("### 💰 حاسبة التعادل المالي")
+    c1,c2 = st.columns(2)
+    with c1:
+        cost  = st.number_input("💵 تكلفة المنتج",        min_value=0.0, value=50.0,  step=1.0)
+        price = st.number_input("🏷️ سعر البيع",            min_value=0.0, value=199.0, step=1.0)
+        cod   = st.number_input("🚚 رسوم COD/التوصيل",    min_value=0.0, value=20.0,  step=1.0)
+        ret   = st.slider("↩️ نسبة الإرجاع (%)", 0, 100, 20)
+    with c2:
+        budget= st.number_input("📢 ميزانية الإعلان (يومي)", min_value=0.0, value=100.0, step=5.0)
+        cpc   = st.number_input("👆 تكلفة النقرة CPC",       min_value=0.01, value=0.5,  step=0.01)
+        cvr   = st.slider("🎯 معدل التحويل (%)", 0.1, 20.0, 2.0, step=0.1)
+    if st.button("📊 احسب"):
+        clicks    = budget/cpc
+        orders    = clicks*(cvr/100)
+        returned  = orders*(ret/100)
+        fulfilled = orders-returned
+        revenue   = fulfilled*price
+        total_c   = orders*cost + orders*cod + budget
+        profit    = revenue-total_c
+        roas      = revenue/budget if budget>0 else 0
+        cpa       = budget/orders  if orders>0 else 0
+        margin    = profit/revenue*100 if revenue>0 else 0
+        st.markdown("---")
+        m1,m2,m3,m4 = st.columns(4)
+        m1.metric("🛒 الطلبات",f"{orders:.0f}")
+        m2.metric("✅ المنفذة", f"{fulfilled:.0f}")
+        m3.metric("💰 الإيراد", f"{revenue:.0f}")
+        m4.metric("📈 الربح",   f"{profit:.0f}", delta="✅ ربح" if profit>0 else "❌ خسارة")
+        st.markdown("---")
+        r1,r2,r3,r4 = st.columns(4)
+        r1.metric("🎯 ROAS",      f"{roas:.2f}x")
+        r2.metric("💸 CPA",       f"{cpa:.2f}")
+        r3.metric("📉 هامش الربح",f"{margin:.1f}%")
+        r4.metric("↩️ المرتجعة",  f"{returned:.0f}")
+        if profit>0: st.success(f"✅ مربحة! ربح {profit:.2f} مقابل إنفاق {budget:.0f}")
+        else:        st.error(f"❌ خاسرة! خسارة {abs(profit):.2f}")
+        with st.expander("📊 تفاصيل"):
+            st.write(f"- نقرات: {clicks:.0f} | طلبات: {orders:.0f} | منفذة: {fulfilled:.0f}")
+            st.write(f"- تكلفة بضاعة: {orders*cost:.0f} | COD: {orders*cod:.0f} | إعلان: {budget:.0f}")
+            st.write(f"- إجمالي تكاليف: {total_c:.0f} | إيراد: {revenue:.0f} | ربح: {profit:.0f}")
