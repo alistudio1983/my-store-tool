@@ -41,9 +41,9 @@ def get_ai_image(keyword, width=800, height=600, style="product", context=""):
         "after":       f"clear AFTER state {safe} problem solved dramatic improvement 8k",
         "dimensions":  f"{safe} product flat lay ruler measurement size reference clean white background 8k",
     }
-    prompt = pm.get(style, f"{safe} high quality realistic commercial photo 8k")
+    prompt = pm.get(style, f"{safe} high quality realistic commercial photo 8k") + " no text no letters no words no writing" + " no text no letters no words no writing"
     seed = random.randint(1, 999999)
-    return f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt)}?width={width}&height={height}&nologo=true&nofeed=true&model=flux&seed={seed}"
+    return f"https://image.pollinations.ai/prompt/{urllib.parse.quote(prompt + ' no text no letters no words')}?width={width}&height={height}&nologo=true&nofeed=true&model=flux&seed={seed}"
 
 AUTO_COLORS = {
     "skincare":  {"primary":"#be185d","secondary":"#fdf2f8","accent":"#f59e0b","gradient1":"#be185d","gradient2":"#ec4899"},
@@ -80,16 +80,16 @@ def generate_lp_json(api_key, product, category):
     model = genai.GenerativeModel(get_model(api_key))
     prompt = f"""
 أنت خبير Copywriter. المنتج: "{product}". الفئة: "{category}".
-النصوص عربية فصحى. حقول _search هي كلمات إنجليزية دقيقة لتوليد صور AI (6-10 كلمات).
+النصوص عربية فصحى. حقول _search هي كلمات إنجليزية دقيقة لتوليد صور AI (6-10 كلمات). أضف دائماً 'no text no letters no words' في نهاية كل حقل _search.
 رد بـ JSON صالح فقط:
 {{
   "hero_headline": "عنوان رئيسي قوي",
   "hero_subheadline": "عنوان فرعي داعم",
-  "image_hero_person_search": "confident arab person using exact product cinematic 8k",
+  "image_hero_person_search": "confident arab person holding exact product cinematic editorial photography 8k no text no letters",
   "image_hero_product_search": "exact product isolated dark dramatic studio lighting 8k",
   "image_hero_lifestyle_search": "lifestyle person using product natural warm setting wide shot 8k",
   "trust_badges": ["شحن مجاني","الدفع عند الاستلام","ضمان 30 يوم","دعم 24/7"],
-  "social_proof_number": "+12,000",
+  "hero_benefits": [{{"icon":"\U0001f4aa","title":"\u0641\u0627\u0626\u062f\u0629 1 \u0645\u062e\u062a\u0635\u0631\u0629"}},{{"icon":"\u2728","title":"\u0641\u0627\u0626\u062f\u0629 2 \u0645\u062e\u062a\u0635\u0631\u0629"}},{{"icon":"\u2705","title":"\u0641\u0627\u0626\u062f\u0629 3 \u0645\u062e\u062a\u0635\u0631\u0629"}},{{"icon":"\U0001f31f","title":"\u0641\u0627\u0626\u062f\u0629 4 \u0645\u062e\u062a\u0635\u0631\u0629"}}], "social_proof_number": "+12,000",
   "social_proof_text": "عميل سعيد",
   "problem_title": "عنوان المشكلة",
   "problem_description": "فقرة تصف الإحباط بعمق",
@@ -189,7 +189,7 @@ def extract_image_slots(data):
             "after":      f"AFTER state {keyword} problem solved improvement 8k",
             "dimensions": f"{keyword} product flat lay ruler measurement white background 8k",
         }
-        prompt = pm.get(itype, f"{keyword} commercial photo 8k")
+        prompt = pm.get(itype, f"{keyword} commercial photo 8k") + " no text no letters no words no writing"
         if pn: prompt = f"Product: {pn}. {prompt}"
         slots.append({"key":key,"section":section,"keyword":keyword,"prompt":prompt,"type":itype,"context":context})
 
@@ -344,7 +344,7 @@ a{{text-decoration:none;}}
 .hero-txt{{flex:1;color:#fff;padding-bottom:15px;}}
 .hero-txt h1{{font-size:1.6rem;font-weight:900;line-height:1.35;margin-bottom:10px;text-shadow:0 2px 10px rgba(0,0,0,.5);}}
 .hero-txt .sub{{font-size:.88rem;color:rgba(255,255,255,.85);margin-bottom:14px;line-height:1.6;}}
-.hero-person{{flex:0 0 190px;max-width:190px;border-radius:16px 16px 0 0;height:310px;object-fit:cover;box-shadow:-8px 0 25px rgba(0,0,0,.45);}}
+.hero-person{{flex:0 0 280px;max-width:280px;border-radius:16px 16px 0 0;height:420px;object-fit:cover;box-shadow:-8px 0 25px rgba(0,0,0,.45);}}
 .hero-bgs{{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;}}
 .hbg{{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);color:#fff;padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:600;}}
 .hero-sp{{background:{a};color:#fff;text-align:center;padding:11px;font-size:.95rem;font-weight:700;border-radius:12px;max-width:300px;margin:12px auto;}}
@@ -469,7 +469,7 @@ a{{text-decoration:none;}}
 
 /* RESPONSIVE */
 @media(max-width:600px){{
-  .hero-person{{flex:0 0 150px;max-width:150px;height:250px;}}
+  .hero-person{{flex:0 0 200px;max-width:200px;height:320px;}}
   .hero-txt h1{{font-size:1.25rem;}}
   .feat-grid{{grid-template-columns:1fr 1fr;}}
   .ing-grid{{grid-template-columns:1fr 1fr;}}
@@ -504,7 +504,7 @@ a{{text-decoration:none;}}
     <div class="hero-txt">
       <h1>{data.get('hero_headline','')}</h1>
       <p class="sub">{data.get('hero_subheadline','')}</p>
-      <div class="hero-bgs">{''.join(f'<span class="hbg">✅ {b}</span>' for b in badges[:4])}</div>
+      <div class="hero-bgs">{''.join(f'<span class="hbg">✅ {f.get("title","")}</span>' for f in data.get('hero_benefits', data.get('features',[])))}</div>
       <div class="hero-sp">👥 {data.get('social_proof_number','')} {data.get('social_proof_text','')}</div>
       <a href="#order" class="btn">{cta} ➜</a>
     </div>
@@ -849,7 +849,7 @@ if app_mode == "🏗️ منشئ صفحات الهبوط":
                             status.text(f"⏳ {slot['key']} ({i+1}/{len(slots)})")
                             img_data = generate_nb_image(
                                 global_api_key,
-                                f"Professional commercial photo. {slot['prompt']}. 8k ultra high quality.",
+                                f"Professional commercial photo. {slot['prompt']}. 8k ultra high quality. no text no letters no words no writing no captions.",
                                 ref_b64=ref
                             )
                             generated[slot['key']] = img_data or get_ai_image(slot['keyword'],800,600,slot['type'])
