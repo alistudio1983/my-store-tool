@@ -664,10 +664,6 @@ if app_mode == "\U0001f3d7\ufe0f \u0645\u0646\u0634\u0626 \u0635\u0641\u062d\u06
                     html_with_imgs = st.session_state.final_page
                     import re as _re
                     html_with_imgs = replace_images_in_html(html_with_imgs, st.session_state.generated_images, prompts) #(r'https://image\.pollinations\.ai/prompt/[^"]+', html_with_imgs)
-                    # old sequential replacement removed
-                    # replaced with replace_images_in_html above
-                        pass #
-                            pass # removed
                     st.session_state.final_page_ai = html_with_imgs
                     st.success("تم إدراج الصور في كود HTML بنجاح!")
                     st.download_button("تحميل HTML مع الصور", html_with_imgs, "landing_page_with_ai_images.html", "text/html")
