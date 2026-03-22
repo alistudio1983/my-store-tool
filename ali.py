@@ -224,7 +224,7 @@ def build_landing_page_html(data, colors):
     reviews_html = ''
     for rev in data.get('reviews', [])[:3]:
         stars = '⭐' * int(rev.get('rating', 5))
-        rev_img = get_ai_image(rev.get('image_search', 'person'), 80, 80, 'review')
+        rev_img = get_ai_image(rev.get('image_search', 'person'), 200, 200, 'review')
         reviews_html += f'''<div class="review-card">
             <div class="rev-top">
                 <img loading="lazy" decoding="async" src="{rev_img}" class="rev-avatar">
@@ -319,7 +319,7 @@ img{{max-width:100%;height:auto;display:block;}}
 .reviews-grid{{display:flex;gap:15px;flex-wrap:wrap;justify-content:center;}}
 .review-card{{background:#fff;border-radius:14px;padding:16px;min-width:200px;flex:1;max-width:300px;box-shadow:0 4px 15px rgba(0,0,0,0.06);}}
 .rev-top{{display:flex;align-items:center;gap:10px;margin-bottom:10px;}}
-.rev-avatar{{width:50px;height:50px;border-radius:50%;object-fit:cover;}}
+.rev-avatar{{width:80px;height:80px;border-radius:50%;object-fit:cover;}}
 .rev-info strong{{display:block;font-size:0.9rem;}}
 .stars{{color:#f59e0b;font-size:0.85rem;}}
 .rev-text{{font-size:0.9rem;color:#444;font-style:italic;margin-bottom:8px;}}
