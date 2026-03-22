@@ -180,7 +180,7 @@ def extract_image_slots(data):
             "feature":    f"visual {context} {keyword} circular white background commercial 8k",
             "ingredient": f"macro {keyword} natural organic studio white background 8k",
             "gif_step":   f"hands tutorial {keyword} clean demonstration bright 8k",
-            "review":     f"headshot portrait real person face neutral background soft lighting 8k",
+            "review":     f"happy satisfied customer avatar illustration digital art warm colors circular frame 8k",
             "doctor":     f"professional doctor white coat hospital confident smile 8k",
             "family":     f"happy arab family group {keyword} warm home authentic 8k",
             "hero_person":f"confident arab person {keyword} cinematic editorial 8k",
@@ -313,7 +313,7 @@ def build_lp_html(data, colors, image_map=None):
         stars = '⭐'*int(rev.get('rating',5))
         revs_html += f'''<div class="rev-card">
 <div class="rev-top">
-  <img loading="lazy" src="{ri}" class="rev-av">
+  <img loading="lazy" src="{ri}" class="rev-av" onerror="this.src='https://ui-avatars.com/api/?name='+this.alt+'&background=random&size=250&bold=true'">
   <div><strong>{rev.get('name','')}</strong><div class="stars">{stars}</div></div>
 </div>
 <p class="rev-txt">"{rev.get('comment','')}"</p>
