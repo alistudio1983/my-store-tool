@@ -576,7 +576,7 @@ def replace_images_in_html(html, image_map, prompts):
     # Find all pollinations image URLs in order
     pattern = r'src="(https://image\.pollinations\.ai/[^"]*)"'
     matches = list(re.finditer(pattern, html))
-# Build a lookup: decode each prompt's URL to match against HTML URLs
+    # Build a lookup: decode each prompt's URL to match against HTML URLs
         prompt_url_map = {}
         for p in prompts:
             # Regenerate the URL pattern for this prompt (without seed)
