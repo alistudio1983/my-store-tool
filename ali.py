@@ -450,48 +450,47 @@ def get_youcan_html(html):
     """Convert HTML to YouCan-compatible: inline all CSS, remove scripts/style/head"""
     import re
     # 1. Extract CSS rules from <style> block
-    css_map = {}
+    def get_youcan_html(html):
+    """Convert HTML to YouCan-compatible: scoped styles, no scripts, no body/html tags"""
+    import re
+    # 1. Extract the <style> content
+    style_content = ''
     style_match = re.search(r'<style[^>]*>(.*?)</style>', html, re.DOTALL)
     if style_match:
-        css_text = style_match.group(1)
-        for m in re.finditer(r'\.([a-zA-Z0-9_-]+)\s*\{([^}]+)\}', css_text):
-            cls_name = m.group(1)
-            rules = m.group(2).strip().replace('\n', ' ')
-            css_map[cls_name] = rules
-    # 2. Remove <style>, <script>, and structural tags
-    clean = re.sub(r'<style[^>]*>.*?</style>', '', html, flags=re.DOTALL)
-    clean = re.sub(r'<script[^>]*>.*?</script>', '', clean, flags=re.DOTALL)
-    clean = re.sub(r'<!DOCTYPE[^>]*>', '', clean, flags=re.IGNORECASE)
-    clean = re.sub(r'</?(?:html|head|body)[^>]*>', '', clean, flags=re.IGNORECASE)
-    clean = re.sub(r'<meta[^>]*>', '', clean, flags=re.IGNORECASE)
-    clean = re.sub(r'<link[^>]*>', '', clean, flags=re.IGNORECASE)
-    # 3. Inline CSS classes into style attributes
-    def replace_classes(m):
-        tag = m.group(0)
-        cls_m = re.search(r'class="([^"]+)"', tag)
-        if not cls_m:
-            return tag
-        classes = cls_m.group(1).split()
-        inline = []
-        for c in classes:
-            if c in css_map:
-                inline.append(css_map[c])
-        # Get existing style if any
-        sty_m = re.search(r'style="([^"]+)"', tag)
-        if sty_m:
-            inline.append(sty_m.group(1).rstrip(';'))
-            tag = tag.replace(f'style="{sty_m.group(1)}"', '')
-        tag = tag.replace(f'class="{cls_m.group(1)}"', '')
-        if inline:
-            combined = '; '.join(inline)
-            tag = tag.rstrip('>').rstrip('/').rstrip() + f' style="{combined}">'
-        return tag
-    clean = re.sub(r'<[a-zA-Z][^>]*class="[^"]+"[^>]*/?>', replace_classes, clean)
-    # 4. Fix data-src
-    clean = clean.replace(' data-src="', ' src="')
-    # 5. Clean up extra whitespace
-    clean = re.sub(r'\n\s*\n\s*\n', '\n\n', clean)
-    return clean.strip()
+        style_content = style_match.group(1)
+    # 2. Remove global resets that break YouCan
+    style_content = re.sub(r'\*\s*\{[^}]*\}', '', style_content)
+    style_content = re.sub(r'body\s*\{[^}]*\}', '', style_content)
+    style_content = re.sub(r'img\s*\{[^}]*\}', '', style_content)
+    # 3. Scope all CSS rules under .ali-lp wrapper
+    scoped_css = ''
+    for m in re.finditer(r'([.#@][^{]+)\{([^}]+)\}', style_content):
+        selector = m.group(1).strip()
+        rules = m.group(2).strip()
+        if selector.startswith('@'):
+            scoped_css += f'{selector}{{{rules}}}\n'
+        else:
+            scoped_css += f'.ali-lp {selector}{{{rules}}}\n'
+    # 4. Extract body content only
+    body_match = re.search(r'<body[^>]*>(.*?)</body>', html, re.DOTALL)
+    body_content = body_match.group(1) if body_match else html
+    # 5. Remove script tags
+    body_content = re.sub(r'<script[^>]*>.*?</script>', '', body_content, flags=re.DOTALL)
+    # 6. Remove structural tags
+    body_content = re.sub(r'<!DOCTYPE[^>]*>', '', body_content, flags=re.IGNORECASE)
+    body_content = re.sub(r'</?(?:html|head|body)[^>]*>', '', body_content, flags=re.IGNORECASE)
+    body_content = re.sub(r'<meta[^>]*>', '', body_content, flags=re.IGNORECASE)
+    body_content = re.sub(r'<link[^>]*>', '', body_content, flags=re.IGNORECASE)
+    body_content = re.sub(r'<style[^>]*>.*?</style>', '', body_content, flags=re.DOTALL)
+    # 7. Fix data-src
+    body_content = body_content.replace(' data-src="', ' src="')
+    # 8. Add img max-width inside wrapper
+    scoped_css += '.ali-lp img{max-width:100%;height:auto;display:block;}\n'
+    # 9. Wrap everything in scoped container
+    result = f'<style>\n{scoped_css}</style>\n<div class="ali-lp" style="direction:rtl;font-family:\'Cairo\',sans-serif;max-width:680px;margin:0 auto;">\n{body_content.strip()}\n</div>'
+    # 10. Clean up whitespace
+    result = re.sub(r'\n\s*\n\s*\n', '\n\n', result)
+    return result.strip()
     
 def extract_image_prompts(data):
     prompts = []
